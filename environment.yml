@@ -5,3 +5,4 @@ dependencies:
   - sphinx=1.4.1
   - pandas
   - scipy  
+  - numpydoc
