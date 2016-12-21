@@ -1,0 +1,6 @@
+name: fixnc-docs
+dependencies:
+  - python=2.7
+  - netcdf4=1.1.8
+  - sphinx=1.4.1
+  - pandas
