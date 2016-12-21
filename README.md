@@ -2,6 +2,7 @@
 
 Collection of tools for basic handling of FESOM ocean model output.
 
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/koldunovn/pyfesom/blob/master/LICENSE)
 ## Examples of usage
 
 - [Show fesom mesh](https://github.com/koldunovn/pyfesom/blob/master/notebooks/show_mesh.ipynb)
