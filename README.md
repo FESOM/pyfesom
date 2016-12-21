@@ -10,4 +10,9 @@ Collection of tools for basic handling of FESOM ocean model output.
 - [Interpolate to regular grid](https://github.com/koldunovn/pyfesom/blob/master/notebooks/interpolate_to_regular_grid.ipynb)
 - [Compare to climatology](https://github.com/koldunovn/pyfesom/blob/master/notebooks/compare_to_climatology.ipynb)
 
+## Requirements
 
+- numpy
+- scipy
+- pandas
+- netCDF4
