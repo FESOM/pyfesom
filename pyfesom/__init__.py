@@ -10,7 +10,7 @@ from .load_mesh_data import *
 from .regriding import *
 from .woa2005 import *
 from .ut import *
-from climatology import *
+from .climatology import *
 
 
 
