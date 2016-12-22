@@ -44,7 +44,8 @@ def load_mesh(path, abg = [50, 15, -90], get3d = True, usepickle = True):
         return mesh
 
     elif usepickle==False:
-        mesh = fesom_mesh(path=path, abg=abg, get3d=get3d, usepickle = usepickle)
+        mesh = fesom_mesh(path=path, abg=abg, get3d=get3d)
+        return mesh
 
 
 class fesom_mesh(object):
@@ -210,9 +211,9 @@ class fesom_mesh(object):
         self.zlevs = np.unique(zcoord)
 
         with open(self.aux3dfile) as f:
-            self.nlev=int(f.next())
-            self.n32=np.array([f.next() for x in \
-                            xrange(self.n2d*self.nlev)]).astype(int).reshape(self.n2d, self.nlev)   
+            self.nlev=int(next(f))
+            self.n32=np.array([next(f) for x in \
+                            range(self.n2d*self.nlev)]).astype(int).reshape(self.n2d, self.nlev)   
         self.topo=np.zeros(shape=(self.n2d))
         for prof in self.n32:           
             ind_nan = prof[prof>0]
@@ -275,8 +276,8 @@ def read_fesom_mesh(path, alpha, beta, gamma, read_diag=True):
     mesh.zlevs = np.unique(zcoord)
 
     with open(aux3dfile) as f:
-        mesh.nlev=int(f.next())
-        mesh.n32=np.array([f.next() for x in xrange(mesh.n2d*mesh.nlev)]).astype(int).reshape(mesh.n2d,mesh.nlev)   
+        mesh.nlev=int(next(f))
+        mesh.n32=np.array([next(f) for x in range(mesh.n2d*mesh.nlev)]).astype(int).reshape(mesh.n2d,mesh.nlev)   
     mesh.topo=np.zeros(shape=(mesh.n2d))
     for prof in mesh.n32:           
         ind_nan = prof[prof>0]
@@ -344,7 +345,7 @@ def read_fesom_3d(str_id, months, years, mesh, result_path, runid, ext, how='mea
     y           =years[0]
     data3       =np.zeros(shape=(mesh.n3d))
     while y<=years[1]:
-        print ['reading year '+str(y)+':']
+        print(['reading year '+str(y)+':'])
         ncfile =result_path+runid+'.'+str(y)+ext
         f = Dataset(ncfile, 'r')
         if how=='mean':
@@ -361,7 +362,7 @@ def read_fesom_2d(str_id, months, years, mesh, result_path, runid, ext, how='mea
     y=years[0]
     data2=np.zeros(shape=(mesh.n2d))
     while y<=years[1]:
-        print ['reading year '+str(y)+':']
+        print(['reading year '+str(y)+':'])
         ncfile =result_path+runid+'.'+str(y)+ext
         f = Dataset(ncfile, 'r')
         if how=='mean':
