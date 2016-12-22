@@ -14,37 +14,57 @@
 import pandas as pd
 import numpy as np
 from netCDF4 import Dataset
-from ut import scalar_r2g
+from .ut import scalar_r2g
 from scipy.io import netcdf # replace it with netCDF4
 import os
 import logging
 import time
 import pickle
+import sys
+
+if (sys.version_info > (3, 0)):
+# Python 3 code in this block
+    python_version = 3 
+else:
+# Python 2 code in this block
+    python_version = 2
+
 
 def load_mesh(path, abg = [50, 15, -90], get3d = True, usepickle = True):
     path=os.path.abspath(path)
-    pickle_file = os.path.join(path,'pickle_mesh')
+    if python_version==3:
+        pickle_file = os.path.join(path,'pickle_mesh_py3')
+    elif python_version == 2:
+        pickle_file = os.path.join(path,'pickle_mesh')
+    print(pickle_file)
+    print(python_version)
 
     if usepickle and (os.path.isfile(pickle_file)):
-        print("The *usepickle = True* and the pickle file (*pickle_mesh*) exists.\n We load the mesh from it.")
+        print("The usepickle == True)")
+        print("The pickle file for python {} exists.".format(str(python_version)))
+        print("The mesh will be loaded from {}".format(pickle_file))
 
-        ifile = open(pickle_file, 'r')
+        ifile = open(pickle_file, 'rb')
         mesh = pickle.load(ifile)
         ifile.close()
         return mesh
 
     elif (usepickle==True) and (os.path.isfile(pickle_file)==False):
-        print('The *usepickle = True*, but the pickle file (*pickle_mesh*) do not exist.')
+        print('The usepickle == True')
+        print('The pickle file for python {} DO NOT exists'.format(str(python_version)))
+        print('The mesh will be saved to {}'.format(pickle_file))
+
         mesh = fesom_mesh(path=path, abg=abg, get3d=get3d)
         logging.info('Use pickle to save the mesh information')
         print('Save mesh to binary format')
-        outfile = open(os.path.join(path,'pickle_mesh'), 'wb')
+        outfile = open(pickle_file, 'wb')
         pickle.dump(mesh, outfile)
         outfile.close()
         return mesh
 
     elif usepickle==False:
-        mesh = fesom_mesh(path=path, abg=abg, get3d=get3d, usepickle = usepickle)
+        mesh = fesom_mesh(path=path, abg=abg, get3d=get3d)
+        return mesh
 
 
 class fesom_mesh(object):
@@ -210,9 +230,9 @@ class fesom_mesh(object):
         self.zlevs = np.unique(zcoord)
 
         with open(self.aux3dfile) as f:
-            self.nlev=int(f.next())
-            self.n32=np.array([f.next() for x in \
-                            xrange(self.n2d*self.nlev)]).astype(int).reshape(self.n2d, self.nlev)   
+            self.nlev=int(next(f))
+            self.n32=np.array([next(f) for x in \
+                            range(self.n2d*self.nlev)]).astype(int).reshape(self.n2d, self.nlev)   
         self.topo=np.zeros(shape=(self.n2d))
         for prof in self.n32:           
             ind_nan = prof[prof>0]
@@ -275,8 +295,8 @@ def read_fesom_mesh(path, alpha, beta, gamma, read_diag=True):
     mesh.zlevs = np.unique(zcoord)
 
     with open(aux3dfile) as f:
-        mesh.nlev=int(f.next())
-        mesh.n32=np.array([f.next() for x in xrange(mesh.n2d*mesh.nlev)]).astype(int).reshape(mesh.n2d,mesh.nlev)   
+        mesh.nlev=int(next(f))
+        mesh.n32=np.array([next(f) for x in range(mesh.n2d*mesh.nlev)]).astype(int).reshape(mesh.n2d,mesh.nlev)   
     mesh.topo=np.zeros(shape=(mesh.n2d))
     for prof in mesh.n32:           
         ind_nan = prof[prof>0]
@@ -344,7 +364,7 @@ def read_fesom_3d(str_id, months, years, mesh, result_path, runid, ext, how='mea
     y           =years[0]
     data3       =np.zeros(shape=(mesh.n3d))
     while y<=years[1]:
-        print ['reading year '+str(y)+':']
+        print(['reading year '+str(y)+':'])
         ncfile =result_path+runid+'.'+str(y)+ext
         f = Dataset(ncfile, 'r')
         if how=='mean':
@@ -361,7 +381,7 @@ def read_fesom_2d(str_id, months, years, mesh, result_path, runid, ext, how='mea
     y=years[0]
     data2=np.zeros(shape=(mesh.n2d))
     while y<=years[1]:
-        print ['reading year '+str(y)+':']
+        print(['reading year '+str(y)+':'])
         ncfile =result_path+runid+'.'+str(y)+ext
         f = Dataset(ncfile, 'r')
         if how=='mean':

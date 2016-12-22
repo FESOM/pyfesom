@@ -10,8 +10,8 @@
 #          - change scipy griddata interpolation to KDTree for speed
 #
 ################################################################################
-from load_mesh_data import fesom2depth
-from regriding import fesom2regular, create_indexes_and_distances
+from .load_mesh_data import fesom2depth
+from .regriding import fesom2regular, create_indexes_and_distances
 import numpy as np
 import scipy as sc
 from numpy import nanmean
@@ -53,7 +53,7 @@ def fesom_2_woa2005(data, mesh, woa05, verbose=True):
                                                 k=10, n_jobs=2)
     for dep_ind in range(len(woa05.z)):
         if verbose:
-            print 'interpolating level: ', dep_ind
+            print('interpolating level: {}'.format(str(dep_ind)))
         wdep=woa05.z[dep_ind]
         dep_up=[z for z in abs(mesh.zlevs) if z<=wdep][-1]
         dep_lo=[z for z in abs(mesh.zlevs) if z>wdep][0]
@@ -83,7 +83,7 @@ def fesom_2_woa2005_part(data, mesh, woa05, levels=None, verbose=True):
                                                 k=10, n_jobs=2)
     for dep_ind in range(len(levels)):
         if verbose:
-            print 'interpolating level: ', dep_ind
+            print('interpolating level: {}'.format(str(dep_ind)))
         wdep=levels[dep_ind]
         dep_up=[z for z in abs(mesh.zlevs) if z<=wdep][-1]
         dep_lo=[z for z in abs(mesh.zlevs) if z>wdep][0]
