@@ -51,8 +51,8 @@ def create_indexes_and_distances(mesh, lons, lats, k=1, n_jobs=2, ):
     xs, ys, zs = lon_lat_to_cartesian(mesh.x2, mesh.y2)
     xt, yt, zt = lon_lat_to_cartesian(lons.flatten(), lats.flatten())
     
-    tree = cKDTree(zip(xs, ys, zs))
-    distances, inds = tree.query(zip(xt, yt, zt), k = k, n_jobs=n_jobs)
+    tree = cKDTree(list(zip(xs, ys, zs)))
+    distances, inds = tree.query(list(zip(xt, yt, zt)), k = k, n_jobs=n_jobs)
     
     return distances, inds
 def fesom2regular(data, mesh, lons, lats, distances=None, \
