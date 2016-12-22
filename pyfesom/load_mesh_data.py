@@ -31,6 +31,22 @@ else:
 
 
 def load_mesh(path, abg = [50, 15, -90], get3d = True, usepickle = True):
+    ''' Loads FESOM mesh 
+
+    Parameters
+    ----------
+    path : str
+        Path to the directory with mesh files
+    abg : list
+        alpha, beta and gamma Euler angles. Default [50, 15, -90]
+    get3d : bool
+        do we load complete 3d mesh or only 2d nodes.
+
+    Returns
+    -------
+    mesh : object
+        fesom_mesh object
+    '''
     path=os.path.abspath(path)
     if python_version==3:
         pickle_file = os.path.join(path,'pickle_mesh_py3')
@@ -92,11 +108,8 @@ class fesom_mesh(object):
     abg : list
         alpha, beta and gamma Euler angles. Default [50, 15, -90]
 
-    toread : list
-        list of the grid type to read. Possible options are '2d' and '3d'.
-        By default we read both 2d and 3d (['2d','3d']), but it might take
-        some time for large meshes and could blow up when there is 
-        not enough memory.
+    get3d : bool
+        do we load complete 3d mesh or only 2d nodes. 
 
     Attributes
     ----------
@@ -116,16 +129,20 @@ class fesom_mesh(object):
         number of vertical levels
     zlevs : array
         array of vertical level depths
-    voltri
+    voltri : array
+        array with 2d volume of triangles
+    alpha : float
+        Euler angle alpha
+    beta : float
+        Euler angle beta
+    gamma : float
+        Euler angle gamma
 
-
-
-
-
-
-
-    existing instances are: path, n2d, e2d,
-    nlev, zlevs, x2, y2, elem, n32, no_cyclic_elem, alpha, beta, gamma"""
+    Returns
+    -------
+    mesh : object
+        fesom_mesh object
+"""
     def __init__(self, path, abg = [50, 15, -90], get3d = True):
         self.path=os.path.abspath(path)
 
@@ -170,6 +187,9 @@ class fesom_mesh(object):
 
 
     def read2d(self):
+        ''' Reads only surface part of the mesh. 
+        Useful if your mesh is large and you want to visualize only surface.
+        '''
         file_content = pd.read_csv(self.nod2dfile, delim_whitespace=True, skiprows=1, \
                                       names=['node_number','x','y','flag'] )
         self.x2=file_content.x.values
@@ -223,6 +243,9 @@ class fesom_mesh(object):
         return self
 
     def read3d(self):
+        '''
+        Reads 3d part of the mesh. 
+        '''
         self.n3d=int(open(self.nod3dfile).readline().rstrip())
         df = pd.read_csv(self.nod3dfile, delim_whitespace=True, skiprows=1, \
                                     names=['node_number','x','y','z','flag'])
@@ -263,7 +286,13 @@ number of 3d nodes    = {}
         return __repr__(self)
         
 
-def read_fesom_mesh(path, alpha, beta, gamma, read_diag=True): 
+def read_fesom_mesh(path, alpha, beta, gamma, read_diag=True):
+    '''
+    .. note:: Deprecated in pyfesom 0.1
+          `read_fesom_mesh` will be removed in future, it is replaced by
+          `load_mesh`. 
+          
+    ''' 
 
     mesh=fesom_mesh()
     mesh.path=path
@@ -353,7 +382,10 @@ def read_fesom_mesh(path, alpha, beta, gamma, read_diag=True):
     return mesh
 
 def read_fesom_3d(str_id, months, years, mesh, result_path, runid, ext, how='mean'): 
-
+    '''
+    Keep for backward compatibility. 
+    Don't use!
+    '''
     str_id      =str_id
     ext         =ext
     runid       =runid
