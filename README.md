@@ -14,6 +14,8 @@ Collection of tools for basic handling of FESOM ocean model output.
 
 ## Requirements
 
+We try to support both python 2.7 and 3.4.
+
 - numpy
 - scipy
 - pandas
