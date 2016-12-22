@@ -11,15 +11,29 @@ import numpy as np
 
 def lon_lat_to_cartesian(lon, lat, R = 6371000):
     """
-    calculates lon, lat coordinates of a point on a sphere with
+    Calculates lon, lat coordinates of a point on a sphere with
     radius R. Taken from http://earthpy.org/interpolation_between_grids_with_ckdtree.html
+
+    Parameters
+    ----------
+    lon : 1d array
+        longitudes
+    lat : 1d array
+        latitudes
+    R   : float
+        radius of the sphere
+
+    Returns
+    -------
+    x,y,z : 1d arrays
+        cartesian coordinates
     """
     lon_r = np.radians(lon)
     lat_r = np.radians(lat)
 
     x =  R * np.cos(lat_r) * np.cos(lon_r)
-    y = R * np.cos(lat_r) * np.sin(lon_r)
-    z = R * np.sin(lat_r)
+    y =  R * np.cos(lat_r) * np.sin(lon_r)
+    z =  R * np.sin(lat_r)
     return x,y,z
 
 def create_indexes_and_distances(mesh, lons, lats, k=1, n_jobs=2, ):
@@ -55,6 +69,7 @@ def create_indexes_and_distances(mesh, lons, lats, k=1, n_jobs=2, ):
     distances, inds = tree.query(list(zip(xt, yt, zt)), k = k, n_jobs=n_jobs)
     
     return distances, inds
+
 def fesom2regular(data, mesh, lons, lats, distances=None, \
                   inds=None, how='nn', k=10, radius_of_influence=100000, n_jobs = 2 ):
     '''
@@ -63,7 +78,7 @@ def fesom2regular(data, mesh, lons, lats, distances=None, \
     Parameters
     ----------
     data : array
-        1d array that represents FESOM data at one 
+        1d array that represents FESOM data at one level.
     mesh : fesom_mesh object
         pyfesom mesh representation
     lons/lats : array
@@ -81,6 +96,11 @@ def fesom2regular(data, mesh, lons, lats, distances=None, \
     n_jobs : int, optional
         Number of jobs to schedule for parallel processing. If -1 is given
         all processors are used. Default: 1.
+    
+    Returns
+    -------
+    data_interpolated : 2d array
+        array with data interpolated to the target grid.
 
     '''
     #print distances

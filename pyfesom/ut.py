@@ -39,7 +39,6 @@ def scalar_r2g(al, be, ga, rlon, rlat):
         1d array of latitudes in geographical coordinates
 
     '''
-
    
     rad=mt.pi/180
     al=al*rad
@@ -69,8 +68,9 @@ def scalar_r2g(al, be, ga, rlon, rlat):
     #Geographical Cartesian coordinates:
     xg=rotate_matrix[0,0]*xr + rotate_matrix[0,1]*yr + rotate_matrix[0,2]*zr
     yg=rotate_matrix[1,0]*xr + rotate_matrix[1,1]*yr + rotate_matrix[1,2]*zr
-    zg=rotate_matrix[2,0]*xr + rotate_matrix[2,1]*yr + rotate_matrix[2,2]*zr        #Geographical coordinates:
-    
+    zg=rotate_matrix[2,0]*xr + rotate_matrix[2,1]*yr + rotate_matrix[2,2]*zr        
+
+    #Geographical coordinates:
     lat = np.arcsin(zg)
     lon=  np.arctan2(yg, xg)
     
@@ -107,7 +107,6 @@ def scalar_g2r(al, be, ga, lon, lat):
         1d araay of latitudes in rotated coordinates
     '''
 
-   
     rad=mt.pi/180
     al=al*rad
     be=be*rad

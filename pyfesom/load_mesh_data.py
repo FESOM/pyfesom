@@ -383,8 +383,10 @@ def read_fesom_mesh(path, alpha, beta, gamma, read_diag=True):
 
 def read_fesom_3d(str_id, months, years, mesh, result_path, runid, ext, how='mean'): 
     '''
-    Keep for backward compatibility. 
-    Don't use!
+    .. note:: Deprecated in pyfesom 0.1
+          `read_fesom_3d` will be removed in future, it is replaced by
+          `get_data`. 
+          
     '''
     str_id      =str_id
     ext         =ext
@@ -409,7 +411,11 @@ def read_fesom_3d(str_id, months, years, mesh, result_path, runid, ext, how='mea
     return data3
 
 def read_fesom_2d(str_id, months, years, mesh, result_path, runid, ext, how='mean'): 
-
+    '''
+    .. note:: Deprecated in pyfesom 0.1
+          `read_fesom_2d` will be removed in future, it is replaced by
+          `get_data`. 
+    '''   
     y=years[0]
     data2=np.zeros(shape=(mesh.n2d))
     while y<=years[1]:
@@ -424,6 +430,37 @@ def read_fesom_2d(str_id, months, years, mesh, result_path, runid, ext, how='mea
         y=y+1
     data2=data2/(years[1]-years[0]+1)
     return data2
+
+def ind_for_depth(depth, mesh):
+    '''
+    Return indexes that belong to certain depth.
+
+    Parameters
+    ----------
+    depth : float
+        desired depth. Note thre will be no interpolation, the model level
+        that is closest to desired depth will be selected.
+    mesh : object
+        FESOM mesh object
+
+    Returns
+    -------
+    ind_depth : 1d array
+        vector with the size equal to the size of the surface nodes with index values where
+        we have data values and missing values where we don't have data values.
+    ind_noempty : 1d array
+        vector with indexes of the `ind_depth` that have data values.
+    ind_empty : 1d array
+        vector with indexes of the `ind_depth` that do not have data values.
+    '''
+     
+    # Find indexes of the model depth that are closest to the required depth.
+    dind=(abs(mesh.zlevs-depth)).argmin()
+    # select data from the level and find indexes with values and with nans
+    ind_depth=mesh.n32[:,dind]-1
+    ind_noempty=np.where(ind_depth>=0)[0]
+    ind_empty=np.where(ind_depth<0)[0]
+    return ind_depth, ind_noempty, ind_empty
 
 def fesom2depth(depth, data3, mesh, verbose=True):
     '''
@@ -452,12 +489,10 @@ def fesom2depth(depth, data3, mesh, verbose=True):
 
     # create 2d field with the 2d mesh size
     data2=np.zeros(shape=(mesh.n2d))
-    # find the model depth that is closest to the required depth 
     dind=(abs(mesh.zlevs-depth)).argmin()
-    # select data from the level and find indexes with values and with nans
-    ind_depth=mesh.n32[:,dind]-1
-    ind_noempty=np.where(ind_depth>=0)[0]
-    ind_empty=np.where(ind_depth<0)[0]
+    
+    ind_depth, ind_noempty, ind_empty = ind_for_depth(depth, mesh)
+    
     # fill in the output array 
     data2[ind_noempty]=data3[ind_depth[ind_noempty]]
     data2[ind_empty]=np.nan
@@ -465,14 +500,7 @@ def fesom2depth(depth, data3, mesh, verbose=True):
         print("For depth {} model level {} will be used".format(str(depth),str(mesh.zlevs[dind])))
     return data2
 
-def ind_for_depth(depth, mesh):
-    # find the model depth that is closest to the required depth 
-    dind=(abs(mesh.zlevs-depth)).argmin()
-    # select data from the level and find indexes with values and with nans
-    ind_depth=mesh.n32[:,dind]-1
-    ind_noempty=np.where(ind_depth>=0)[0]
-    ind_empty=np.where(ind_depth<0)[0]
-    return ind_depth, ind_noempty, ind_empty
+
 
 def get_data(data, mesh, depth = 0):
     '''
@@ -491,7 +519,7 @@ def get_data(data, mesh, depth = 0):
     Returns
     -------
     level_data : array
-        2d array (actually vector) with data from the desired level.
+        2d array (actually vector) with data from model level that is closest to the desired depth.
     elem_no_nan : array
         array with triangles (defined as triplets of node indexes) with
         not NaN elements. 

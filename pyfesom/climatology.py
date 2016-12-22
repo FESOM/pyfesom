@@ -36,6 +36,23 @@ class climatology(object):
     -------
     object with climatology fields
 
+    Attributes
+    ----------
+    x : 2d array
+        longitudes
+    y : 2d array
+        latitudes
+    T : 3d array
+        temperatures
+    S : 3d array
+        salinity
+    z : 1d array
+        depths
+    Tyz : 2d array
+        zonal mean of temperature
+    Syz : 3d array
+        zonal mean of salinity
+
     '''
     def __init__(self, path, climname='woa05'):
         if climname=='woa05':
