@@ -14,7 +14,7 @@
 import pandas as pd
 import numpy as np
 from netCDF4 import Dataset
-from ut import scalar_r2g
+from .ut import scalar_r2g
 from scipy.io import netcdf # replace it with netCDF4
 import os
 import logging
