@@ -8,6 +8,7 @@
 
 from scipy.spatial import cKDTree
 import numpy as np
+from collections import namedtuple
 
 def lon_lat_to_cartesian(lon, lat, R = 6371000):
     """
@@ -130,4 +131,100 @@ def fesom2regular(data, mesh, lons, lats, distances=None, \
         data_interpolated = np.ma.masked_invalid(data_interpolated)
     
     return data_interpolated
+
+def regular2regular(data, ilons, ilats, olons, olats, distances=None, \
+                  inds=None, how='nn', k=10, \
+                  radius_of_influence=100000, n_jobs = 2):
+    '''
+    Interpolates from regular to regular grid. 
+    It's a wraper around `fesom2regular` that creates an object that 
+    mimic fesom mesh class and contain only coordinates and flatten the data.
+
+    Parameters
+    ----------
+    data : array
+        1d or 2d array that represents gridded data at one level.
+    ilons : arrea
+    mesh : fesom_mesh object
+        pyfesom mesh representation
+    lons/lats : array
+        2d arrays with target grid values.
+    distances : array of floats, optional
+        The distances to the nearest neighbors.
+    inds : ndarray of ints, optional
+        The locations of the neighbors in data.
+    how : str
+       Interpolation method. Options are 'nn' (nearest neighbor) and 'idist' (inverce distance)
+    k : int
+        k-th nearest neighbors to use. Only used when how==idist
+    radius_of_influence : int
+        Cut off distance in meters.
+    n_jobs : int, optional
+        Number of jobs to schedule for parallel processing. If -1 is given
+        all processors are used. Default: 1.
+    
+    Returns
+    -------
+    data_interpolated : 2d array
+        array with data interpolated to the target grid.
+
+    '''
+    fmesh = namedtuple('mesh', 'x2 y2')
+    mesh = fmesh(x2=ilons.ravel(), y2=ilats.ravel())
+
+    data = data.ravel()
+
+    data_interpolated = fesom2regular(data, mesh, lons=olons, lats=olats,\
+                                      distances=distances, \
+                                      inds=inds, how=how,\
+                                      k=k, radius_of_influence=radius_of_influence,\
+                                      n_jobs = n_jobs):
+    ''
+    
+    return data_interpolated
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
