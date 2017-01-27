@@ -187,8 +187,8 @@ def fesom_2_clim_onelevel(data, mesh, climatology, levels=None, verbose=True):
         #zz[dep_ind,:,:] = pf.fesom2regular(data2, mesh, xx,yy)
         out_data[dep_ind,:,:] = fesom2regular(data2, mesh, xx, yy, distances=distances,\
                                inds=inds)
-    depth_indexes = [np.where(woa05.z==i)[0][0] for i in levels]
-    out_data[np.isnan(woa05.T[depth_indexes,:,:])]=np.nan
+    depth_indexes = [np.where(climatology.z==i)[0][0] for i in levels]
+    out_data[np.isnan(climatology.T[depth_indexes,:,:])]=np.nan
     return xx, yy, out_data
 
 

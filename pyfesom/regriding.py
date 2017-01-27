@@ -133,8 +133,7 @@ def fesom2regular(data, mesh, lons, lats, distances=None, \
     return data_interpolated
 
 def regular2regular(data, ilons, ilats, olons, olats, distances=None, \
-                  inds=None, how='nn', k=10, \
-                  radius_of_influence=100000, n_jobs = 2):
+                  inds=None, how='nn', k=10, radius_of_influence=100000, n_jobs = 2):
     '''
     Interpolates from regular to regular grid. 
     It's a wraper around `fesom2regular` that creates an object that 
@@ -178,8 +177,8 @@ def regular2regular(data, ilons, ilats, olons, olats, distances=None, \
                                       distances=distances, \
                                       inds=inds, how=how,\
                                       k=k, radius_of_influence=radius_of_influence,\
-                                      n_jobs = n_jobs):
-    ''
+                                      n_jobs = n_jobs)
+    
     
     return data_interpolated
 
