@@ -89,4 +89,23 @@ class climatology(object):
             self.Tyz=nanmean(self.T, 2)
             self.Syz=nanmean(self.S, 2)
 
+        if climname=='gdem':
+            ncfile = Dataset(os.path.join(path, 'gdemv3s_tm.nc'))
+            self.T = np.copy(ncfile.variables['water_temp'][0,:,:,:])
+            x=np.copy(ncfile.variables['lon'][:])
+            x[x>180]=x[x>180]-360
+            ind=[i[0] for i in sorted(enumerate(x), key=lambda x:x[1])]
+            x=np.sort(x)
+            self.x=x
+            self.y=ncfile.variables['lat'][:]
+            self.z=ncfile.variables['depth'][:]
+            self.T[:,:,:]=self.T[:,:,ind]
+            self.S=np.copy(ncfile.variables['salinity'][0,:,:,:])
+            self.S[:,:,:]=self.S[:,:,ind]
+            ncfile.close()
+            self.Tyz=nanmean(self.T, 2)
+            self.Syz=nanmean(self.S, 2)
+            self.T = np.ma.masked_less(self.T,-1000)
+            self.S = np.ma.masked_less(self.S,-1000)
+
 
