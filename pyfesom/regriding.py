@@ -324,7 +324,8 @@ def regular2clim(data, ilons, ilats, izlevs, climatology, levels=None, verbose=T
     return xx, yy, out_data
 
 
-def clim2regular(climatology, param, olons, olats, levels=None, verbose=True):
+def clim2regular(climatology, param, olons, olats, \
+                 levels=None, verbose=True, radius_of_influence=100000):
     '''
     Interpolation of data on the regular grid to climatology for the set of levels.
 
@@ -404,7 +405,8 @@ def clim2regular(climatology, param, olons, olats, levels=None, verbose=True):
         #zz[dep_ind,:,:] = pf.fesom2regular(data2, mesh, xx,yy)
         out_data[dep_ind,:,:] = regular2regular(data2, clons, clats,\
                                                 xx, yy,\
-                                                distances=distances, inds=inds)
+                                                distances=distances, inds=inds,\
+                                                radius_of_influence=radius_of_influence)
     #depth_indexes = [np.where(climatology.z==i)[0][0] for i in levels]
     #out_data = np.ma.masked_where(climatology.T[depth_indexes,:,:].mask, out_data)
     return xx, yy, out_data
