@@ -184,50 +184,7 @@ def regular2regular(data, ilons, ilats, olons, olats, distances=None, \
 
 
 
-def fesom_2_clim(data, mesh, climatology, verbose=True):
-    '''
-    Interpolation of fesom data to grid of the climatology.
-
-    Parameters
-    ----------
-    data : array
-        1d array of FESOM 3d data for one time step
-    mesh : mesh object
-        FESOM mesh object
-    climatology: climatology object
-        FESOM climatology object
-
-    Returns
-    -------
-    xx : 2d array
-        longitudes
-    yy : 2d array
-        latitudes
-    out_data : 2d array
-       array with data interpolated to climatology level
-
-    '''
-    xx,yy = np.meshgrid(climatology.x, climatology.y)
-    out_data=np.copy(climatology.T)
-    distances, inds = create_indexes_and_distances(mesh, xx, yy,\
-                                                k=10, n_jobs=2)
-    for dep_ind in range(len(climatology.z)):
-        if verbose:
-            print('interpolating level: {}'.format(str(dep_ind)))
-        wdep=climatology.z[dep_ind]
-        dep_up=[z for z in abs(mesh.zlevs) if z<=wdep][-1]
-        dep_lo=[z for z in abs(mesh.zlevs) if z>wdep][0]
-        i_up=1-abs(wdep-dep_up)/(dep_lo-dep_up)
-        i_lo=1-abs(wdep-dep_lo)/(dep_lo-dep_up)
-        data2=i_up*fesom2depth(dep_up, data, mesh, verbose=False)
-        data2=data2+i_lo*fesom2depth(dep_lo, data, mesh, verbose=False)
-        out_data[dep_ind,:,:] = fesom2regular(data2, mesh, xx, yy, distances=distances,\
-                               inds=inds)
-    out_data[np.isnan(climatology.T)]=np.nan
-    return xx, yy, out_data
-
-
-def fesom_2_clim_onelevel(data, mesh, climatology, levels=None, verbose=True):
+def fesom2clim(data, mesh, climatology, levels=None, verbose=True):
     '''
     Interpolation of fesom data to grid of the climatology for set of levels.
 
@@ -241,7 +198,8 @@ def fesom_2_clim_onelevel(data, mesh, climatology, levels=None, verbose=True):
         FESOM climatology object
     levels : list like
         list of levels to interpolate. At present you can use only
-        standard levels of WOA.
+        standard levels of WOA. If levels are not specified, all standard WOA
+        levels will be used. 
 
     Returns
     -------
@@ -285,6 +243,43 @@ def fesom_2_clim_onelevel(data, mesh, climatology, levels=None, verbose=True):
 
 
 def regular2clim(data, ilons, ilats, izlevs, climatology, levels=None, verbose=True):
+    '''
+    Interpolation of data on the regular grid to climatology for the set of levels.
+
+    Parameters
+    ----------
+    data : array
+        3d array of data on regular grid for one time step
+    ilons : array
+        1d or 2d array of longitudes
+    ilats : array
+        1d or 2d array of latitudes
+    izlevs : array
+        depths of the source data
+    climatology: climatology object
+        FESOM climatology object
+    levels : list like
+        list of levels to interpolate. At present you can use only
+        standard levels of WOA. If levels are not specified, all standard WOA
+        levels will be used. 
+
+
+    Returns
+    -------
+    xx : 2d array
+        longitudes
+    yy : 2d array
+        latitudes
+    out_data : 2d array
+       array with data interpolated to climatology level
+
+    '''
+    if ((ilons.ndim == 1) & (ilats.ndim == 1)):
+        ilons, ilats = np.meshgrid(ilons, ilats)
+    elif (ilons.ndim == 2) & (ilats.ndim == 2):
+        pass
+    else:
+        raise ValueError('Wrong dimentions for ilons and ilats')
 
     fmesh = namedtuple('mesh', 'x2 y2 zlevs')
     mesh = fmesh(x2=ilons.ravel(), y2=ilats.ravel(), zlevs=izlevs)
@@ -330,7 +325,33 @@ def regular2clim(data, ilons, ilats, izlevs, climatology, levels=None, verbose=T
 
 
 def clim2regular(climatology, param, olons, olats, levels=None, verbose=True):
+    '''
+    Interpolation of data on the regular grid to climatology for the set of levels.
 
+    Parameters
+    ----------
+    climatology: climatology object
+        FESOM climatology object
+    param : str
+        name of the parameter to interpolate. Only 'T' for temperature and
+        'S' for salinity are currently supported.
+    olons : array
+        1d or 2d array of longitudes to interpolate climatology on.
+    olats : array
+        1d or 2d array of longitudes to interpolate climatology on.
+    levels : list like
+        list of levels to interpolate to.
+    
+
+    Returns
+    -------
+    xx : 2d array
+        longitudes
+    yy : 2d array
+        latitudes
+    out_data : 2d array
+       array with climatology data interpolated to desired levels
+    '''
     clons,clats = np.meshgrid(climatology.x, climatology.y)
 
     fmesh = namedtuple('mesh', 'x2 y2 zlevs')
