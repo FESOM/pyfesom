@@ -184,6 +184,209 @@ def regular2regular(data, ilons, ilats, olons, olats, distances=None, \
 
 
 
+def fesom_2_clim(data, mesh, climatology, verbose=True):
+    '''
+    Interpolation of fesom data to grid of the climatology.
+
+    Parameters
+    ----------
+    data : array
+        1d array of FESOM 3d data for one time step
+    mesh : mesh object
+        FESOM mesh object
+    climatology: climatology object
+        FESOM climatology object
+
+    Returns
+    -------
+    xx : 2d array
+        longitudes
+    yy : 2d array
+        latitudes
+    out_data : 2d array
+       array with data interpolated to climatology level
+
+    '''
+    xx,yy = np.meshgrid(climatology.x, climatology.y)
+    out_data=np.copy(climatology.T)
+    distances, inds = create_indexes_and_distances(mesh, xx, yy,\
+                                                k=10, n_jobs=2)
+    for dep_ind in range(len(climatology.z)):
+        if verbose:
+            print('interpolating level: {}'.format(str(dep_ind)))
+        wdep=climatology.z[dep_ind]
+        dep_up=[z for z in abs(mesh.zlevs) if z<=wdep][-1]
+        dep_lo=[z for z in abs(mesh.zlevs) if z>wdep][0]
+        i_up=1-abs(wdep-dep_up)/(dep_lo-dep_up)
+        i_lo=1-abs(wdep-dep_lo)/(dep_lo-dep_up)
+        data2=i_up*fesom2depth(dep_up, data, mesh, verbose=False)
+        data2=data2+i_lo*fesom2depth(dep_lo, data, mesh, verbose=False)
+        out_data[dep_ind,:,:] = fesom2regular(data2, mesh, xx, yy, distances=distances,\
+                               inds=inds)
+    out_data[np.isnan(climatology.T)]=np.nan
+    return xx, yy, out_data
+
+
+def fesom_2_clim_onelevel(data, mesh, climatology, levels=None, verbose=True):
+    '''
+    Interpolation of fesom data to grid of the climatology for set of levels.
+
+    Parameters
+    ----------
+    data : array
+        1d array of FESOM 3d data for one time step
+    mesh : mesh object
+        FESOM mesh object
+    climatology: climatology object
+        FESOM climatology object
+    levels : list like
+        list of levels to interpolate. At present you can use only
+        standard levels of WOA.
+
+    Returns
+    -------
+    xx : 2d array
+        longitudes
+    yy : 2d array
+        latitudes
+    out_data : 2d array
+       array with data interpolated to climatology level
+
+    '''    
+
+    if levels is None:
+        levels = climatology.z
+    else:
+        levels = np.array(levels)
+        check = np.in1d(levels, climatology.z)
+        if False in check:
+            raise ValueError('Not all of the layers that you specify are WOA2005 layers')
+
+    xx,yy = np.meshgrid(climatology.x, climatology.y)
+    out_data=np.zeros((levels.shape[0],climatology.T.shape[1], climatology.T.shape[2]))
+    distances, inds = create_indexes_and_distances(mesh, xx, yy,\
+                                                k=10, n_jobs=2)
+    for dep_ind in range(len(levels)):
+        if verbose:
+            print('interpolating level: {}'.format(str(dep_ind)))
+        wdep=levels[dep_ind]
+        dep_up=[z for z in abs(mesh.zlevs) if z<=wdep][-1]
+        dep_lo=[z for z in abs(mesh.zlevs) if z>wdep][0]
+        i_up=1-abs(wdep-dep_up)/(dep_lo-dep_up)
+        i_lo=1-abs(wdep-dep_lo)/(dep_lo-dep_up)
+        data2=i_up*fesom2depth(dep_up, data, mesh, verbose=False)
+        data2=data2+i_lo*fesom2depth(dep_lo, data, mesh, verbose=False)
+        #zz[dep_ind,:,:] = pf.fesom2regular(data2, mesh, xx,yy)
+        out_data[dep_ind,:,:] = fesom2regular(data2, mesh, xx, yy, distances=distances,\
+                               inds=inds)
+    depth_indexes = [np.where(climatology.z==i)[0][0] for i in levels]
+    out_data[np.isnan(climatology.T[depth_indexes,:,:])]=np.nan
+    return xx, yy, out_data
+
+
+def regular2clim(data, ilons, ilats, izlevs, climatology, levels=None, verbose=True):
+
+    fmesh = namedtuple('mesh', 'x2 y2 zlevs')
+    mesh = fmesh(x2=ilons.ravel(), y2=ilats.ravel(), zlevs=izlevs)
+
+    #data = data.ravel()
+
+    if levels is None:
+        levels = climatology.z
+    else:
+        levels = np.array(levels)
+        check = np.in1d(levels, climatology.z)
+        if False in check:
+            raise ValueError('Not all of the layers that you specify are WOA2005 layers')
+
+    xx,yy = np.meshgrid(climatology.x, climatology.y)
+    out_data=np.zeros((levels.shape[0],climatology.T.shape[1], climatology.T.shape[2]))
+    distances, inds = create_indexes_and_distances(mesh, xx, yy,\
+                                                k=10, n_jobs=2)
+
+    for dep_ind in range(len(levels)):
+        wdep=levels[dep_ind]
+        if verbose:
+            print('interpolating to level: {}'.format(str(wdep)))
+        dep_up=[z for z in abs(mesh.zlevs) if z<=wdep][-1]
+        if verbose:
+            print('Upper level: {}'.format(str(dep_up)))
+        dep_lo=[z for z in abs(mesh.zlevs) if z>wdep][0]
+        if verbose:
+            print('Lower level: {}'.format(str(dep_lo)))
+        i_up=1-abs(wdep-dep_up)/(dep_lo-dep_up)
+        i_lo=1-abs(wdep-dep_lo)/(dep_lo-dep_up)
+        dind_up=(abs(mesh.zlevs-dep_up)).argmin()
+        dind_lo=(abs(mesh.zlevs-dep_lo)).argmin()
+        data2=i_up*data[dind_up,:,:]
+        data2=data2+i_lo*data[dind_lo,:,:]
+        #zz[dep_ind,:,:] = pf.fesom2regular(data2, mesh, xx,yy)
+        out_data[dep_ind,:,:] = regular2regular(data2, ilons, ilats,\
+                                                xx, yy,\
+                                                distances=distances, inds=inds)
+    depth_indexes = [np.where(climatology.z==i)[0][0] for i in levels]
+    out_data = np.ma.masked_where(climatology.T[depth_indexes,:,:].mask, out_data)
+    return xx, yy, out_data
+
+
+def clim2regular(climatology, param, olons, olats, levels=None, verbose=True):
+
+    clons,clats = np.meshgrid(climatology.x, climatology.y)
+
+    fmesh = namedtuple('mesh', 'x2 y2 zlevs')
+    mesh = fmesh(x2=clons.ravel(), y2=clats.ravel(), zlevs=climatology.z)
+
+    #data = data.ravel()
+
+    if levels is None:
+        raise ValueError('provide levels for interpolation')
+    else:
+        levels = np.array(levels)   
+        
+    if olons.ndim == 1:
+        xx,yy = np.meshgrid(olons, olats)
+    elif olons.ndim == 2:
+        xx = olons
+        yy = olats
+    else:
+        raise ValueError('Wrong dimentions for olons')
+
+
+    out_data=np.zeros((levels.shape[0],olons.shape[0], olons.shape[1]))
+    distances, inds = create_indexes_and_distances(mesh, xx, yy,\
+                                                k=10, n_jobs=2)
+
+    if param == 'T':
+        data = climatology.T[:]
+    elif param == 'S':
+        data = climatology.S[:]
+    else:
+        raise ValueError('Wrong variable {}'.format(param))
+
+
+    for dep_ind in range(len(levels)):
+        wdep=levels[dep_ind]
+        if verbose:
+            print('interpolating to level: {}'.format(str(wdep)))
+        dep_up=[z for z in abs(mesh.zlevs) if z<=wdep][-1]
+        if verbose:
+            print('Upper level: {}'.format(str(dep_up)))
+        dep_lo=[z for z in abs(mesh.zlevs) if z>wdep][0]
+        if verbose:
+            print('Lower level: {}'.format(str(dep_lo)))
+        i_up=1-abs(wdep-dep_up)/(dep_lo-dep_up)
+        i_lo=1-abs(wdep-dep_lo)/(dep_lo-dep_up)
+        dind_up=(abs(mesh.zlevs-dep_up)).argmin()
+        dind_lo=(abs(mesh.zlevs-dep_lo)).argmin()
+        data2=i_up*data[dind_up,:,:]
+        data2=data2+i_lo*data[dind_lo,:,:]
+        #zz[dep_ind,:,:] = pf.fesom2regular(data2, mesh, xx,yy)
+        out_data[dep_ind,:,:] = regular2regular(data2, clons, clats,\
+                                                xx, yy,\
+                                                distances=distances, inds=inds)
+    #depth_indexes = [np.where(climatology.z==i)[0][0] for i in levels]
+    #out_data = np.ma.masked_where(climatology.T[depth_indexes,:,:].mask, out_data)
+    return xx, yy, out_data
 
 
 
