@@ -1,0 +1,82 @@
+[main]
+# path to pyfesom
+pfpath = /pf/a/a270088/trunk/view/pyfesom
+
+# Set bounding longitudes and number of points between them
+left_lon = -180
+right_lon = 180
+number_of_lons = 1440
+
+# Set bounding latitudes and number of points between them
+lower_lat = -90
+upper_lat = 90
+number_of_lats = 720
+
+#Set years to process
+start_year = 1960
+end_year   = 1960
+
+# Set variables to process (separate names by comma)
+# Valid variables are: 
+# temp, salt, u, v, w, wpot, ssh, area, hice, uice, vice
+out_vars = uice,vice
+
+# Set model z levels to process (separate by comma)
+# At present you have to specify only model levels, 
+# there is no vertical interpolation. Standard values in FESOM are:
+# 0.,    10.,    20.,    30.,    40.,    50.,    60.,    70.,
+# 80.,    90.,   100.,   115.,   135.,   160.,   190.,   230.,
+# 280.,   340.,   410.,   490.,   580.,   680.,   790.,   910.,
+# 1040.,  1180.,  1330.,  1500.,  1700.,  1920.,  2150.,  2400.,
+# 2650.,  2900.,  3150.,  3400.,  3650.,  3900.,  4150.,  4400.,
+# 4650.,  4900.,  5150.,  5400.,  5650.,  5900.,  6450.
+levels   = 100,115
+
+# Path to the folder with FESOM mesh.
+# If you would like to use catched mesh (much faster after initial catching)
+# you have to have write permission to the folder.
+meshpath       = /mnt/lustre01/work/ab0995/a270088/data/fron_mesh/
+
+# Path to the folder with netCDF files of model results
+path_to_data   = /work/ab0995/a270067/fesom/fron/fro02/
+
+#Path to the folder where the output will be stored
+path_to_output = /mnt/lustre01/work/ab0995/a270088/OUTPUT/DIMA/fron2netcdf/
+
+# Templates of the file names. The {} will be replaced 
+# by the year of the simulation. Every timestep in the file will be processed.
+
+# Input files of ocean variables (from the path_to_data folder)
+ifile_template = fro02.{}.oce.mean.nc
+# Input files of sea ice variables (from the path_to_data folder)
+ifile_template_ice = fro02.{}.ice.mean.nc
+# Names of the output files that will be stored in the path_to_output folder
+ofile_template = fro02.{}_tt1.nc
+
+# Do we compress netCDF4 files. Usually slower, but result in considerably
+# smaller files
+zlib = True
+
+# Interpolation options
+
+# Radius that will be used for selecting points during interpolation (in meters)
+# The larger the radius the smoother the result will be. It should be set to the# lowest resolution that the FESOM have in the region that you would like to
+# interpolate in order to avoid gaps in the resulting fields.
+radius_of_influence = 40000
+
+# Number of FESOM points to consider (within radius_of_interpolation) to 
+# get the value for the target grid point. If number of points is 1 
+# the nearest neighbor interpolation will be used. Otherwise the inverse square
+# interpolation with specified number of points will be used.
+neighboring_points = 10
+
+# Euler angles for the mesh (for constructing mesh files).
+angles_for_mesh = 0, 0, 0
+
+# Euler angles that are used inside the model to rotate the grid.
+angles_for_rotation = 50, 15, -90
+
+# Equally distribute timesteps through the year.
+# If true time values in the original file will be ignored.
+distribute_timesteps = False
+
