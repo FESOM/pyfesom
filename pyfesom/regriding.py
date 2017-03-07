@@ -185,7 +185,7 @@ def regular2regular(data, ilons, ilats, olons, olats, distances=None, \
 
 
 
-def fesom2clim(data, mesh, climatology, levels=None, verbose=True):
+def fesom2clim(data, mesh, climatology, levels=None, verbose=True, how='nn', k_neighbors=10, radius_of_influence=100000):
     '''
     Interpolation of fesom data to grid of the climatology for set of levels.
 
@@ -201,6 +201,12 @@ def fesom2clim(data, mesh, climatology, levels=None, verbose=True):
         list of levels to interpolate. At present you can use only
         standard levels of WOA. If levels are not specified, all standard WOA
         levels will be used. 
+    how : str
+        Interpolation method. Options are 'nn' (nearest neighbor) and 'idist' (inverce distance)
+    k : int
+        k-th nearest neighbors to use. Only used when how==idist
+    radius_of_influence : int
+        Cut off distance in meters.
 
     Returns
     -------
@@ -237,7 +243,8 @@ def fesom2clim(data, mesh, climatology, levels=None, verbose=True):
         data2=data2+i_lo*fesom2depth(dep_lo, data, mesh, verbose=False)
         #zz[dep_ind,:,:] = pf.fesom2regular(data2, mesh, xx,yy)
         out_data[dep_ind,:,:] = fesom2regular(data2, mesh, xx, yy, distances=distances,\
-                               inds=inds)
+				inds=inds, how=how, k=k_neighbors,\
+				radius_of_influence=radius_of_influence)
     depth_indexes = [np.where(climatology.z==i)[0][0] for i in levels]
     out_data[np.isnan(climatology.T[depth_indexes,:,:])]=np.nan
     return xx, yy, out_data
