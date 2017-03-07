@@ -9,6 +9,7 @@
 from scipy.spatial import cKDTree
 import numpy as np
 from collections import namedtuple
+from .load_mesh_data import fesom2depth
 
 def lon_lat_to_cartesian(lon, lat, R = 6371000):
     """
