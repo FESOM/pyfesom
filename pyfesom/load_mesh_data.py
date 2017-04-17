@@ -502,7 +502,7 @@ def fesom2depth(depth, data3, mesh, verbose=True):
 
 
 
-def get_data(data, mesh, depth = 0):
+def get_data(data, mesh, depth = 0, verbose=True):
     '''
     Show data from the model level that is closest to the
     desired depth. 
@@ -515,6 +515,9 @@ def get_data(data, mesh, depth = 0):
         mesh representation
     depth : int
         desired depth
+    verbose : bool
+        flag to turn off information about which level will be used.
+
 
     Returns
     -------
@@ -526,7 +529,7 @@ def get_data(data, mesh, depth = 0):
 
     '''
     elem2=mesh.elem[mesh.no_cyclic_elem,:]
-    level_data = fesom2depth(depth, data ,mesh)
+    level_data = fesom2depth(depth, data ,mesh, verbose)
     #The data2[elem2] creates 3d array where every raw is three
     #values of the parameter on the verticies of the triangle.
     d=level_data[elem2].mean(axis=1)
