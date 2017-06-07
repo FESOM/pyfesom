@@ -192,8 +192,9 @@ class fesom_mesh(object):
         '''
         file_content = pd.read_csv(self.nod2dfile, delim_whitespace=True, skiprows=1, \
                                       names=['node_number','x','y','flag'] )
-        self.x2=file_content.x.values
-        self.y2=file_content.y.values
+        self.x2     =file_content.x.values
+        self.y2     =file_content.y.values
+        self.ind2d  =file_content.flag.values
         self.n2d=len(self.x2)
 
         file_content = pd.read_csv(self.elm2dfile, delim_whitespace=True, skiprows=1, \
