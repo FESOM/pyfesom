@@ -12,6 +12,7 @@
 
 import numpy as np
 import math as mt
+from load_mesh_data import ind_for_depth
 
 
 def scalar_r2g(al, be, ga, rlon, rlat):
@@ -232,3 +233,49 @@ def vec_rotate_r2g(al, be, ga, lon, lat, urot, vrot, flag):
     v=np.array(v)
 
     return (u,v)
+
+def cut_region(mesh, box=[13, 30, 53, 66], depth=0):
+    '''
+    Cut region from the mesh.
+
+    Parameters
+    ----------
+    mesh : object
+        FESOM mesh object
+    box : list
+        Coordinates of the box in [-180 180 -90 90] format.
+        Default set to [13, 30, 53, 66], Baltic Sea.
+    depth : float
+        depth
+
+    Returns
+    -------
+    elem_no_nan : array
+        elements that belong to the region defined by `box`.
+    no_nan_triangles : array
+        boolian array of size elem2d with True for elements 
+        that belong to the region defines by `box`.
+    '''
+    depth = 0
+    left, right, down, up = box
+    ind_depth, ind_noempty, ind_empty = ind_for_depth(depth, mesh)
+    elem2 = mesh.elem
+    xx = mesh.x2[elem2]
+    yy = mesh.y2[elem2]
+    dd = ind_depth[elem2]
+
+    vvv = ((dd>=0) & (xx>=left) & (xx<=right) & (yy>=down) & (yy<=up))
+    indd = np.where((ind_depth>=0) &
+                    (mesh.x2>=left) &
+                    (mesh.x2<=right) &
+                    (mesh.y2>=down) &
+                    (mesh.y2<=up))
+    ccc = vvv.mean(axis=1)
+    ccc[ccc!=1] = np.nan
+
+    no_nan_triangles = np.invert(np.isnan(ccc))
+    elem_no_nan = elem2[no_nan_triangles,:]
+
+    return elem_no_nan, no_nan_triangles
+
+
