@@ -42,14 +42,17 @@ from cartopy.util import add_cyclic_point
  If not provided min/max values from data will be used with 40 levels.')
 @click.option('--quiet', '-q', is_flag=True,
               help='If present additional information will not be printed.')
-@click.option('--ofile','-o' ,type=click.Path(exists=False) ,
-             help='Path to the output figure. If present the image\
+@click.option('--ofile', '-o', type=click.Path(exists=False),
+              help='Path to the output figure. If present the image\
  will be saved to the file instead of showing it. ')
-@click.option('--mapproj','-m', type=click.Choice(['merc', 'pc','np','sp', 'rob']),
+@click.option('--mapproj','-m', type=click.Choice(['merc', 'pc', 'np', 'sp', 'rob']),
               default='merc')
+@click.option('--abg', nargs=3, type=(click.FLOAT,
+                    click.FLOAT,
+                    click.FLOAT), default=(50, 15, -90))
 def showfile(ifile, variable, depth,
              meshpath, box, res, influence,
-             timestep, levels, quiet, ofile, mapproj):
+             timestep, levels, quiet, ofile, mapproj, abg):
     '''
     meshpath - Path to the folder with FESOM1.4 mesh files.
 
@@ -67,9 +70,9 @@ def showfile(ifile, variable, depth,
         click.secho('Influence raduis: {} meters'.format(influence), fg='red')
         click.secho('Timestep: {}'.format(timestep))
         if levels:
-            click.secho('Levels: {}'.format(influence), fg='red')
+            click.secho('Levels: {}'.format(levels), fg='red')
         else:
-            click.secho('Levels: auto'.format(influence), fg='red')
+            click.secho('Levels: auto', fg='red')
 
     sstep = timestep
     radius_of_influence = influence
@@ -77,7 +80,7 @@ def showfile(ifile, variable, depth,
     left, right, down, up = box
     lonNumber, latNumber = res
 
-    mesh = pf.load_mesh(meshpath)
+    mesh = pf.load_mesh(meshpath, abg=abg)
     flf = Dataset(ifile)
     lonreg = np.linspace(left, right, lonNumber)
     latreg = np.linspace(down, up, latNumber)
