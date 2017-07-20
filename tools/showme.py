@@ -9,9 +9,8 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cmocean import cm as cmo
 from matplotlib import cm
-import sys
-#sys.path.append("/pf/a/a270088/trunk/view/pyfesom")
-sys.path.append("/Users/koldunovn/PYHTON/pyfesom")
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 import pyfesom as pf
 from cartopy.util import add_cyclic_point
 
