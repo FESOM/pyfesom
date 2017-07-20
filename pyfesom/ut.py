@@ -12,7 +12,7 @@
 
 import numpy as np
 import math as mt
-from load_mesh_data import ind_for_depth
+import load_mesh_data
 
 
 def scalar_r2g(al, be, ga, rlon, rlat):
@@ -258,7 +258,7 @@ def cut_region(mesh, box=[13, 30, 53, 66], depth=0):
     '''
     depth = 0
     left, right, down, up = box
-    ind_depth, ind_noempty, ind_empty = ind_for_depth(depth, mesh)
+    ind_depth, ind_noempty, ind_empty = load_mesh_data.ind_for_depth(depth, mesh)
     elem2 = mesh.elem
     xx = mesh.x2[elem2]
     yy = mesh.y2[elem2]

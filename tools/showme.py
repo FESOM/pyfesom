@@ -1,7 +1,7 @@
 import click
 from netCDF4 import Dataset, MFDataset, num2date
 import matplotlib as mpl
-#mpl.use('Agg')
+mpl.use('Qt4Agg')
 #%matplotlib inline
 import matplotlib.pylab as plt
 import numpy as np
@@ -10,8 +10,8 @@ import cartopy.feature as cfeature
 from cmocean import cm as cmo
 from matplotlib import cm
 import sys
-sys.path.append("/pf/a/a270088/trunk/view/pyfesom")
-
+#sys.path.append("/pf/a/a270088/trunk/view/pyfesom")
+sys.path.append("/Users/koldunovn/PYHTON/pyfesom")
 import pyfesom as pf
 from cartopy.util import add_cyclic_point
 
