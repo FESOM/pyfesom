@@ -17,6 +17,7 @@ import scipy as sc
 from numpy import nanmean
 from netCDF4 import Dataset
 import os
+import seawater as sw
 
 class climatology(object):
     '''
@@ -66,6 +67,11 @@ class climatology(object):
             self.T[:,:,:]=self.T[:,:,ind]
             self.S=np.copy(ncfile.variables['s00an1'][0,:,:,:])
             self.S[:,:,:]=self.S[:,:,ind]
+            depth3d = np.zeros(self.S.shape)
+            for i in range(self.z.shape[0]):
+                depth3d[i, :, :] = self.z[i]
+            ptemp = sw.ptmp(self.S, self.T, depth3d)
+            self.T = ptemp
             ncfile.close()
             self.Tyz=nanmean(self.T, 2)
             self.Syz=nanmean(self.S, 2)
@@ -85,6 +91,11 @@ class climatology(object):
             self.T[:,:,:]=self.T[:,:,ind]
             self.S=np.copy(ncfile.variables['salt'][:,:,:])
             self.S[:,:,:]=self.S[:,:,ind]
+            depth3d = np.zeros(self.S.shape)
+            for i in range(self.z.shape[0]):
+                depth3d[i, :, :] = self.z[i]
+            ptemp = sw.ptmp(self.S, self.T, depth3d)
+            self.T = ptemp
             ncfile.close()
             self.Tyz=nanmean(self.T, 2)
             self.Syz=nanmean(self.S, 2)
@@ -102,6 +113,11 @@ class climatology(object):
             self.T[:,:,:]=self.T[:,:,ind]
             self.S=np.copy(ncfile.variables['salinity'][0,:,:,:])
             self.S[:,:,:]=self.S[:,:,ind]
+            depth3d = np.zeros(self.S.shape)
+            for i in range(self.z.shape[0]):
+                depth3d[i, :, :] = self.z[i]
+            ptemp = sw.ptmp(self.S, self.T, depth3d)
+            self.T = ptemp
             ncfile.close()
             self.Tyz=nanmean(self.T, 2)
             self.Syz=nanmean(self.S, 2)
