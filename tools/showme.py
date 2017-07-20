@@ -49,9 +49,12 @@ from cartopy.util import add_cyclic_point
 @click.option('--abg', nargs=3, type=(click.FLOAT,
                     click.FLOAT,
                     click.FLOAT), default=(50, 15, -90))
+@click.option('--clim','-c', type=click.Choice(['phc', 'woa05', 'gdem']),
+              help='Select climatology to compare to. If option is set the model bias to climatology will be shown.')
+@click.option('--cmap', help='Name of the colormap from cmocean package or from the standard matplotlib set. By default `Spectral_r` will be used for property plots and `balance` for bias plots.')
 def showfile(ifile, variable, depth,
              meshpath, box, res, influence,
-             timestep, levels, quiet, ofile, mapproj, abg):
+             timestep, levels, quiet, ofile, mapproj, abg, clim, cmap):
     '''
     meshpath - Path to the folder with FESOM1.4 mesh files.
 
@@ -72,7 +75,21 @@ def showfile(ifile, variable, depth,
             click.secho('Levels: {}'.format(levels), fg='red')
         else:
             click.secho('Levels: auto', fg='red')
+    
+    if cmap:
+        if cmap in cmo.cmapnames:
+            colormap = cmo.cmap_d[cmap]
+        elif cmap in plt.cm.datad:
+            colormap = plt.get_cmap(cmap)
+        else:
+            raise ValueError('Get unrecognised name for the colormap `{}`. Colormaps should be from standard matplotlib set of from cmocean package.'.format(cmap))
+    else:
+        if clim:
+            colormap = cmo.cmap_d['balance']
+        else:
+            colormap = plt.get_cmap('Spectral_r')
 
+    
     sstep = timestep
     radius_of_influence = influence
 
@@ -84,8 +101,33 @@ def showfile(ifile, variable, depth,
     lonreg = np.linspace(left, right, lonNumber)
     latreg = np.linspace(down, up, latNumber)
     lonreg2, latreg2 = np.meshgrid(lonreg, latreg)
+    
+    dind=(abs(mesh.zlevs-depth)).argmin()
+    realdepth = mesh.zlevs[dind]
 
-    level_data, nnn = pf.get_data(flf.variables[variable][sstep], mesh, depth)
+    level_data, nnn = pf.get_data(flf.variables[variable][sstep], mesh, realdepth)
+    ofesom = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, radius_of_influence=radius_of_influence)
+
+    if clim:
+        if variable=='temp':
+            climvar = 'T'
+        elif variable == 'salt':
+            climvar = 'S'
+        else:
+            raise ValueError('You have selected --clim/-c option, but variable `{}` is not in climatology. Acceptable values are `temp` and `salt` only.'.format(variable))
+        #os.path.join(os.path.dirname(__file__), "../")
+        pathToClim = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../data/")
+        print(pathToClim)
+        w = pf.climatology(pathToClim, clim)
+        xx, yy, oclim = pf.clim2regular(w, climvar, lonreg2, latreg2, levels=[realdepth],
+                                     radius_of_influence=radius_of_influence)
+        oclim = oclim[0, :, :]
+        data = ofesom - oclim
+    else:
+        data = ofesom
+    
+
+    
     if mapproj == 'merc':
         ax = plt.subplot(111, projection=ccrs.Mercator())
     elif mapproj == 'pc':
@@ -99,13 +141,13 @@ def showfile(ifile, variable, depth,
 
     ax.set_extent([left, right, down, up], crs=ccrs.PlateCarree())
 
-    data = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, radius_of_influence=radius_of_influence)
+
     if levels:
         mmin, mmax, nnum = levels
         nnum = int(nnum)
     else:
-        mmin = data.min()
-        mmax = data.max()
+        mmin = np.nanmin(data)
+        mmax = np.nanmax(data)
         nnum = 40
 
 
@@ -116,12 +158,12 @@ def showfile(ifile, variable, depth,
                      data,
                      levels = data_levels,
                      transform=ccrs.PlateCarree(),
-                     cmap=cm.Spectral_r,
+                     cmap=colormap,
                     extend='both')
     ax.coastlines(resolution = '50m',lw=0.5)
-    ax.add_feature(cfeature.GSHHSFeature(levels=[1],scale='low', facecolor='lightgray'))
+    ax.add_feature(cfeature.GSHHSFeature(levels=[1], scale='low', facecolor='lightgray'))
     cb = plt.colorbar(mm, orientation='horizontal', pad=0.03)
-    plt.title('{} at {}m'.format(variable, depth))
+    plt.title('{} at {}m'.format(variable, realdepth))
     plt.tight_layout()
     if ofile:
         plt.savefig(ofile, dpi=100)
