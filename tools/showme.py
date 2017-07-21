@@ -96,7 +96,7 @@ def showfile(ifile, variable, depth,
     left, right, down, up = box
     lonNumber, latNumber = res
 
-    mesh = pf.load_mesh(meshpath, abg=abg)
+    mesh = pf.load_mesh(meshpath, abg=abg, usepickle=False, usejoblib=True)
     flf = Dataset(ifile)
     lonreg = np.linspace(left, right, lonNumber)
     latreg = np.linspace(down, up, latNumber)
