@@ -21,6 +21,7 @@ import logging
 import time
 import pickle
 import sys
+import joblib
 
 if (sys.version_info > (3, 0)):
 # Python 3 code in this block
@@ -30,7 +31,9 @@ else:
     python_version = 2
 
 
-def load_mesh(path, abg = [50, 15, -90], get3d = True, usepickle = True):
+def load_mesh(path, abg = [50, 15, -90], 
+              get3d = True, usepickle = True,
+              usejoblib = False ):
     ''' Loads FESOM mesh 
 
     Parameters
@@ -48,12 +51,19 @@ def load_mesh(path, abg = [50, 15, -90], get3d = True, usepickle = True):
         fesom_mesh object
     '''
     path=os.path.abspath(path)
-    if python_version==3:
-        pickle_file = os.path.join(path,'pickle_mesh_py3')
-    elif python_version == 2:
-        pickle_file = os.path.join(path,'pickle_mesh')
-    print(pickle_file)
-    print(python_version)
+    if (usepickle==True) and (usejoblib==True):
+        raise ValueError("Both `usepickle` and `usejoblib` set to True, select only one")
+
+    if usepickle:    
+        if python_version==3:
+            pickle_file = os.path.join(path,'pickle_mesh_py3')
+        elif python_version == 2:
+            pickle_file = os.path.join(path,'pickle_mesh')
+        print(pickle_file)
+        print(python_version)
+
+    if usejoblib:
+        joblib_file = os.path.join(path, 'joblib_mesh')
 
     if usepickle and (os.path.isfile(pickle_file)):
         print("The usepickle == True)")
@@ -78,8 +88,28 @@ def load_mesh(path, abg = [50, 15, -90], get3d = True, usepickle = True):
         outfile.close()
         return mesh
 
-    elif usepickle==False:
+    elif (usepickle==False) and (usejoblib==False):
         mesh = fesom_mesh(path=path, abg=abg, get3d=get3d)
+        return mesh
+
+    if (usejoblib==True) and (os.path.isfile(joblib_file)):
+        print("The usejoblib == True)")
+        print("The joblib file for python {} exists.".format(str(python_version)))
+        print("The mesh will be loaded from {}".format(joblib_file))
+
+        mesh = joblib.load(joblib_file)
+        return mesh
+
+    elif (usejoblib==True) and (os.path.isfile(joblib_file)==False):
+        print('The usejoblib == True')
+        print('The joblib file for python {} DO NOT exists'.format(str(python_version)))
+        print('The mesh will be saved to {}'.format(joblib_file))
+
+        mesh = fesom_mesh(path=path, abg=abg, get3d=get3d)
+        logging.info('Use joblib to save the mesh information')
+        print('Save mesh to binary format')
+        joblib.dump(mesh, joblib_file)
+        
         return mesh
 
 
