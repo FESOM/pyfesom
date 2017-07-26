@@ -36,7 +36,7 @@ from cartopy.util import add_cyclic_point
               help='Radius of influence for interpolation, in meters.')
 @click.option('--timestep', '-t', default=0, show_default=True,
               help='Timstep from netCDF variable, strats with 0.')
-@click.option('--levels', '-l', nargs=3, type=click.INT,
+@click.option('--levels', '-l', nargs=3, type=click.FLOAT,
               help='Levels for contour plot in format min max numberOfLevels.\
  If not provided min/max values from data will be used with 40 levels.')
 @click.option('--quiet', '-q', is_flag=True,
