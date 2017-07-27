@@ -104,6 +104,9 @@ def showo(meshpath, ifile, variable,
     ax.coastlines(lw=0.5, resolution='10m')
     plt.colorbar(mm, orientation='horizontal', pad =0.03, )
     plt.title('{} at {}'.format(variable, depth), size = 20)
-    plt.show()
+    if ofile:
+        plt.savefig(ofile, dpi=200)
+    else:
+        plt.show()
 if __name__ == '__main__':
     showo()
