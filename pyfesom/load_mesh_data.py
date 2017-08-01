@@ -19,6 +19,10 @@ from scipy.io import netcdf # replace it with netCDF4
 import os
 import logging
 import time
+try:
+    import cPickle as pickle
+except:
+    import pickle
 import pickle
 import sys
 import joblib
