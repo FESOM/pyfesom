@@ -4,7 +4,7 @@ pyfesom
 Python library and collection of tools for basic handling of FESOM ocean model output.
 
 Examples of library usage
-=================
+=========================
 
 - `Show FESOM mesh`_
 - `Plot variable on original grid`_
@@ -30,9 +30,11 @@ Requirements
 
 .. toctree::
    :maxdepth: 2
-   :caption: API:
+   :caption: Content:
 
+   tools
    api
+
 
 Indices and tables
 ==================
