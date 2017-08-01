@@ -1,9 +1,9 @@
 pyfesom
 =======
 
-Collection of tools for basic handling of FESOM ocean model output.
+Python library and collection of tools for basic handling of FESOM ocean model output.
 
-Examples of usage
+Examples of library usage
 =================
 
 - `Show FESOM mesh`_
