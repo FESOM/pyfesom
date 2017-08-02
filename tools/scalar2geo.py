@@ -9,10 +9,14 @@ from joblib import Parallel, delayed
 import json
 from collections import OrderedDict
 import click
+from mpl_toolkits.basemap import maskoceans
+from scipy.interpolate import griddata
+import scipy.spatial.qhull as qhull
+from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
 
 @click.command()
 @click.argument('meshpath', type=click.Path(exists=True), required=True)
-@click.argument('ipath', nargs=1, type=click.Path(exists=True), required=True)
+@click.argument('ipath', nargs=-1, type=click.Path(exists=True), required=True)
 @click.argument('opath', nargs=1, required=False, default='./')
 @click.argument('variable', nargs=1, required=False, default='temp')
 @click.option('--depth', '-d', default=0, type=click.FLOAT, show_default=True,
@@ -31,12 +35,17 @@ import click
               help='Number of points along each axis (for lon and  lat).')
 @click.option('--influence','-i', default=80000, show_default=True,
               help='Radius of influence for interpolation, in meters.')
+@click.option('--interp', type=click.Choice(['nn', 'idist', 'linear', 'cubic']),
+              default='nn')
 @click.option('--timestep', '-t', default=0, show_default=True,
               help='Timstep from netCDF variable, strats with 0.')
+@click.option('--abg', nargs=3, type=(click.FLOAT,
+                    click.FLOAT,
+                    click.FLOAT), default=(50, 15, -90))
 def convert(meshpath, ipath, opath, variable, depth, box,
-            res, influence, timestep):
-
-    mesh = pf.load_mesh(meshpath, usepickle=False, usejoblib=True)
+            res, influence, timestep, abg, interp):
+    print(ipath)
+    mesh = pf.load_mesh(meshpath, abg=abg, usepickle=False, usejoblib=True)
     
     sstep = timestep
     radius_of_influence = influence
@@ -56,7 +65,7 @@ def convert(meshpath, ipath, opath, variable, depth, box,
 
     dind=(abs(mesh.zlevs-depth)).argmin()
     realdepth = mesh.zlevs[dind]
-    k = 1
+    k = 10
     distances, inds = pf.create_indexes_and_distances(mesh, lonreg2, latreg2,\
                                                       k=k, n_jobs=4)
     
@@ -69,20 +78,51 @@ def convert(meshpath, ipath, opath, variable, depth, box,
         ind_depth_all.append(ind_depth)
         ind_noempty_all.append(ind_noempty)
         ind_empty_all.append(ind_empty)
+    if interp == 'nn':
+        topo_interp = pf.fesom2regular(mesh.topo, mesh, lonreg2, latreg2, distances=distances,
+                                inds=inds, radius_of_influence=radius_of_influence, n_jobs=1)
+        k = 1
+        distances, inds = pf.create_indexes_and_distances(mesh, lonreg2, latreg2,\
+                                                          k=k, n_jobs=4)
+        points, qh = None, None
+    elif interp == 'idist':
+        topo_interp = pf.fesom2regular(mesh.topo, mesh, lonreg2, latreg2, distances=distances,
+                                inds=inds, radius_of_influence=radius_of_influence, n_jobs=1, how='idist')
+        k = 5
+        distances, inds = pf.create_indexes_and_distances(mesh, lonreg2, latreg2,\
+                                                          k=k, n_jobs=4)
+        points, qh = None, None
+    elif interp == 'linear':
+        points = np.vstack((mesh.x2, mesh.y2)).T
+        qh = qhull.Delaunay(points)
+        topo_interp = LinearNDInterpolator(qh, mesh.topo)((lonreg2, latreg2))
+        distances, inds = None, None
+    elif interp == 'cubic':
+        points = np.vstack((mesh.x2, mesh.y2)).T
+        qh = qhull.Delaunay(points)
+        topo_interp = CloughTocher2DInterpolator(qh, mesh.topo)((lonreg2, latreg2))
+        distances, inds = None, None
 
-    
-    
-    scalar2geo(ipath, opath, variable,
-               mesh, ind_noempty_all,
-               ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2, 
-               distances, inds, radius_of_influence)
+    mdata = maskoceans(lonreg2, latreg2, topo_interp, resolution = 'h', inlands=False)
+    topo = np.ma.masked_where(~mdata.mask, topo_interp)
+    ncore=2
+    Parallel(n_jobs=ncore, verbose=50)(delayed(scalar2geo)(ifile, opath, variable,
+                                       mesh, ind_noempty_all,
+                                       ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2, 
+                                       distances, inds, radius_of_influence, topo, points, interp, qh, timestep) for ifile in ipath)
+    # scalar2geo(ipath, opath, variable,
+    #            mesh, ind_noempty_all,
+    #            ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2, 
+    #            distances, inds, radius_of_influence, topo, points, interp, qh, timestep)
 
-def scalar2geo(ipath, opath, variable,
+def scalar2geo(ifile, opath, variable,
                mesh, ind_noempty_all,
                ind_empty_all,ind_depth_all, cmore_table, 
-               lonreg2, latreg2, distances, inds, radius_of_influence):
+               lonreg2, latreg2, distances, inds, radius_of_influence, 
+               topo, points, interp, qh, timestep):
+    print(ifile)
     ext = variable
-    ifile = ipath
+    #ifile = ipath
     ofile = os.path.join(opath, '{}_{}.nc'.format(os.path.basename(ifile)[:-3], ext))
     
     fl = Dataset(ifile)
@@ -108,7 +148,10 @@ def scalar2geo(ipath, opath, variable,
     time = fw.createVariable('time','d',('time'))
     time.setncatts(noempty_dict(cmore_table['axis_entry']['time']))
     time.units = fl.variables['time'].units
-    time[:] = fl.variables['time'][:]
+    if timestep == -1:
+        time[:] = fl.variables['time'][:]
+    else:
+        time[:] = fl.variables['time'][timestep]
 
     if fl.variables[variable].shape[1] == mesh.n2d:
         dim3d = False
@@ -116,23 +159,43 @@ def scalar2geo(ipath, opath, variable,
         dim3d = True
     else:
         raise ValueError('Variable size {} is not equal to number of 2d ({}) or 3d ({}) nodes'.format(fl.variables[variable].shape[1], mesh.n2d, mesh.n3d))
+    
+    # ii = LinearNDInterpolator(qh, mesh.topo)
+    if timestep == -1:
+        timesteps = range(fl.variables[variable].shape[0])
+    else:
+        timesteps = range(timestep, timestep+1)
 
     if dim3d:
         temp = fw.createVariable(variable,'d',\
                                 ('time','depth_coord','latitude','longitude'), \
                                 fill_value=-9999, zlib=False, complevel=1)
-        all_layers = fl.variables[variable][0,:]
-        level_data=np.zeros(shape=(mesh.n2d))
-        inter_data=np.zeros(shape=(len(mesh.zlevs),lonreg2.shape[0], lonreg2.shape[1]))
-        for i in range(len(mesh.zlevs)):
-            #level_data=np.zeros(shape=(mesh.n2d))
-            level_data[ind_noempty_all[i]]=all_layers[ind_depth_all[i][ind_noempty_all[i]]]
-            level_data[ind_empty_all[i]] = np.nan
-            air_nearest = pf.fesom2regular(level_data, mesh, lonreg2, latreg2,                                                 distances=distances,
-                                           inds=inds, radius_of_influence=radius_of_influence, n_jobs=1)
-            temp[0,i,:,:] = air_nearest[:,:].filled(-9999)
+        
+        for ttime in timesteps:
 
-            print i
+            all_layers = fl.variables[variable][ttime,:]
+            level_data=np.zeros(shape=(mesh.n2d))
+            inter_data=np.zeros(shape=(len(mesh.zlevs),lonreg2.shape[0], lonreg2.shape[1]))
+            # inter_data=np.ma.masked_where(topo[0,:,:].mask, inter_data)
+            for i in range(len(mesh.zlevs)):
+                #level_data=np.zeros(shape=(mesh.n2d))
+                level_data[ind_noempty_all[i]]=all_layers[ind_depth_all[i][ind_noempty_all[i]]]
+                level_data[ind_empty_all[i]] = np.nan
+                if interp == 'nn':
+                    air_nearest = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, distances=distances,
+                                            inds=inds, radius_of_influence=radius_of_influence, n_jobs=1)
+                elif interp == 'idist':
+                    air_nearest = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, distances=distances,
+                                            inds=inds, radius_of_influence=radius_of_influence, n_jobs=1, how='idist')
+                elif interp == 'linear':
+                    air_nearest = LinearNDInterpolator(qh, level_data)((lonreg2, latreg2))
+                elif interp == 'cubic':
+                    air_nearest =CloughTocher2DInterpolator(qh, level_data)((lonreg2, latreg2))
+
+                air_nearest = np.ma.masked_where(topo.mask, air_nearest)
+                temp[ttime,i,:,:] = air_nearest[:,:].filled(-9999)
+
+                print i
 
     fl.close()
     fw.close()
