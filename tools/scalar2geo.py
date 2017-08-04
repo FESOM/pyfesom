@@ -57,11 +57,13 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     lonreg = np.linspace(left, right, lonNumber)
     latreg = np.linspace(down, up, latNumber)
     lonreg2, latreg2 = np.meshgrid(lonreg, latreg)
-
-    with open('CMIP6_Omon.json') as data_file:
+    
+    localdir = os.path.join(os.path.dirname(__file__))
+    print(localdir)
+    with open(localdir+'/CMIP6_Omon.json') as data_file:
         cmore_table = json.load(data_file, object_pairs_hook=OrderedDict)
 
-    with open('CMIP6_SIday.json') as data_file:    
+    with open(localdir+'/CMIP6_SIday.json') as data_file:    
         cmore_table_ice = json.load(data_file, object_pairs_hook=OrderedDict)
     
     depths = np.array(depths.split(' '),dtype='float32')
@@ -179,7 +181,7 @@ def scalar2geo(ifile, opath, variable,
     else:
         timesteps = range(timestep, timestep+1)
 
-    if dim3d:
+    if True:
         temp = fw.createVariable(variable,'d',\
                                 ('time','depth_coord','latitude','longitude'), \
                                 fill_value=-9999, zlib=False, complevel=1)
