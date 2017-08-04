@@ -13,6 +13,9 @@ import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), "../"))
 import pyfesom as pf
 from cartopy.util import add_cyclic_point
+from scipy.interpolate import griddata
+import scipy.spatial.qhull as qhull
+from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
 
 @click.command()
 @click.argument('meshpath', type=click.Path(exists=True))
@@ -45,16 +48,18 @@ from cartopy.util import add_cyclic_point
               help='Path to the output figure. If present the image\
  will be saved to the file instead of showing it. ')
 @click.option('--mapproj','-m', type=click.Choice(['merc', 'pc', 'np', 'sp', 'rob']),
-              default='merc')
+              default='rob')
 @click.option('--abg', nargs=3, type=(click.FLOAT,
                     click.FLOAT,
                     click.FLOAT), default=(50, 15, -90))
 @click.option('--clim','-c', type=click.Choice(['phc', 'woa05', 'gdem']),
               help='Select climatology to compare to. If option is set the model bias to climatology will be shown.')
 @click.option('--cmap', help='Name of the colormap from cmocean package or from the standard matplotlib set. By default `Spectral_r` will be used for property plots and `balance` for bias plots.')
+@click.option('--interp', type=click.Choice(['nn', 'idist', 'linear', 'cubic']),
+              default='nn')
 def showfile(ifile, variable, depth,
              meshpath, box, res, influence,
-             timestep, levels, quiet, ofile, mapproj, abg, clim, cmap):
+             timestep, levels, quiet, ofile, mapproj, abg, clim, cmap, interp):
     '''
     meshpath - Path to the folder with FESOM1.4 mesh files.
 
@@ -104,9 +109,23 @@ def showfile(ifile, variable, depth,
     
     dind=(abs(mesh.zlevs-depth)).argmin()
     realdepth = mesh.zlevs[dind]
-
+    
     level_data, nnn = pf.get_data(flf.variables[variable][sstep], mesh, realdepth)
-    ofesom = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, radius_of_influence=radius_of_influence)
+    if interp =='nn':
+        ofesom = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, radius_of_influence=radius_of_influence)
+    elif interp == 'linear':
+        points = np.vstack((mesh.x2, mesh.y2)).T
+        qh = qhull.Delaunay(points)
+        ofesom = LinearNDInterpolator(qh, level_data)((lonreg2, latreg2))
+        
+    elif interp == 'cubic':
+        points = np.vstack((mesh.x2, mesh.y2)).T
+        qh = qhull.Delaunay(points)
+        ofesom = CloughTocher2DInterpolator(qh, level_data)((lonreg2, latreg2))
+
+
+
+    
 
     if clim:
         if variable=='temp':
