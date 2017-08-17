@@ -16,6 +16,9 @@ from cartopy.util import add_cyclic_point
 from scipy.interpolate import griddata
 import scipy.spatial.qhull as qhull
 from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
+from cartopy.util import add_cyclic_point
+
+
 
 @click.command()
 @click.argument('meshpath', type=click.Path(exists=True))
@@ -57,9 +60,10 @@ from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
 @click.option('--cmap', help='Name of the colormap from cmocean package or from the standard matplotlib set. By default `Spectral_r` will be used for property plots and `balance` for bias plots.')
 @click.option('--interp', type=click.Choice(['nn', 'idist', 'linear', 'cubic']),
               default='nn')
+@click.option('--ptype', type=click.Choice(['cf', 'pcm']), default = 'cf')
 def showfile(ifile, variable, depth,
              meshpath, box, res, influence,
-             timestep, levels, quiet, ofile, mapproj, abg, clim, cmap, interp):
+             timestep, levels, quiet, ofile, mapproj, abg, clim, cmap, interp, ptype):
     '''
     meshpath - Path to the folder with FESOM1.4 mesh files.
 
@@ -80,7 +84,7 @@ def showfile(ifile, variable, depth,
             click.secho('Levels: {}'.format(levels), fg='red')
         else:
             click.secho('Levels: auto', fg='red')
-    
+
     if cmap:
         if cmap in cmo.cmapnames:
             colormap = cmo.cmap_d[cmap]
@@ -94,7 +98,7 @@ def showfile(ifile, variable, depth,
         else:
             colormap = plt.get_cmap('Spectral_r')
 
-    
+
     sstep = timestep
     radius_of_influence = influence
 
@@ -106,10 +110,10 @@ def showfile(ifile, variable, depth,
     lonreg = np.linspace(left, right, lonNumber)
     latreg = np.linspace(down, up, latNumber)
     lonreg2, latreg2 = np.meshgrid(lonreg, latreg)
-    
+
     dind=(abs(mesh.zlevs-depth)).argmin()
     realdepth = mesh.zlevs[dind]
-    
+
     level_data, nnn = pf.get_data(flf.variables[variable][sstep], mesh, realdepth)
     if interp =='nn':
         ofesom = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, radius_of_influence=radius_of_influence)
@@ -117,7 +121,7 @@ def showfile(ifile, variable, depth,
         points = np.vstack((mesh.x2, mesh.y2)).T
         qh = qhull.Delaunay(points)
         ofesom = LinearNDInterpolator(qh, level_data)((lonreg2, latreg2))
-        
+
     elif interp == 'cubic':
         points = np.vstack((mesh.x2, mesh.y2)).T
         qh = qhull.Delaunay(points)
@@ -125,7 +129,7 @@ def showfile(ifile, variable, depth,
 
 
 
-    
+
 
     if clim:
         if variable=='temp':
@@ -144,9 +148,9 @@ def showfile(ifile, variable, depth,
         data = ofesom - oclim
     else:
         data = ofesom
-    
 
-    
+
+
     if mapproj == 'merc':
         ax = plt.subplot(111, projection=ccrs.Mercator())
     elif mapproj == 'pc':
@@ -171,18 +175,32 @@ def showfile(ifile, variable, depth,
 
 
     data_levels = np.linspace(mmin, mmax, nnum)
-
-    mm = ax.contourf(lonreg,\
+    if ptype == 'cf':
+        mm = ax.contourf(lonreg,\
                      latreg,\
                      data,
                      levels = data_levels,
                      transform=ccrs.PlateCarree(),
                      cmap=colormap,
                     extend='both')
+    elif ptype == 'pcm':
+        data_cyc, lon_cyc = add_cyclic_point(data, coord=lonreg)
+        mm = ax.pcolormesh(lon_cyc,\
+                         latreg,\
+                         data_cyc,
+                         vmin = mmin,
+                         vmax = mmax,
+                         transform=ccrs.PlateCarree(),
+                         cmap=colormap,
+                        )
+    else:
+        raise ValueError('Inknown plot type {}'.format(ptype))
+
     ax.coastlines(resolution = '50m',lw=0.5)
     ax.add_feature(cfeature.GSHHSFeature(levels=[1], scale='low', facecolor='lightgray'))
     cb = plt.colorbar(mm, orientation='horizontal', pad=0.03)
-    plt.title('{} at {}m'.format(variable, realdepth))
+    cb.set_label(flf.variables[variable].units)
+    plt.title('{} at {}m.'.format(variable, realdepth))
     plt.tight_layout()
     if ofile:
         plt.savefig(ofile, dpi=100)
