@@ -36,13 +36,15 @@ from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
 @click.option('--influence','-i', default=80000, show_default=True,
               help='Radius of influence for interpolation, in meters.')
 @click.option('--interp', type=click.Choice(['nn', 'idist', 'linear', 'cubic']),
-              default='nn')
+              default='nn',
+              help = 'Interpolation method. Options are nn - nearest neighbor (KDTree implementation, fast), idist - inverse distance (KDTree implementation, decent speed), linear (scipy implementation, slow) and cubic (scipy implementation, slowest and give strange results on corarse meshes).')
 @click.option('--timestep', '-t', default=0, show_default=True,
-              help='Timstep from netCDF variable, strats with 0.\
+              help='Timstep from netCDF variable, starts with 0.\
               If -1, all timesteps of the netCDF file will be used.')
 @click.option('--abg', nargs=3, type=(click.FLOAT,
                     click.FLOAT,
-                    click.FLOAT), default=(50, 15, -90))
+                    click.FLOAT), default=(50, 15, -90),
+              help='Alpha, beta and gamma Euler angles. If you plots look rotated, you use wrong abg values. Usually nessesary only during the first use of the mesh.')
 def convert(meshpath, ipath, opath, variable, depths, box,
             res, influence, timestep, abg, interp):
     print(ipath)

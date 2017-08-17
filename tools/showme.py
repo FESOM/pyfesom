@@ -51,19 +51,27 @@ from cartopy.util import add_cyclic_point
               help='Path to the output figure. If present the image\
  will be saved to the file instead of showing it. ')
 @click.option('--mapproj','-m', type=click.Choice(['merc', 'pc', 'np', 'sp', 'rob']),
-              default='rob')
+              default='rob', show_default=True, 
+              help = 'Map projection. Options are Mercator (merc), Plate Carree (pc), North Polar Stereo (np), South Polar Stereo (sp),  Robinson (rob)')
 @click.option('--abg', nargs=3, type=(click.FLOAT,
                     click.FLOAT,
-                    click.FLOAT), default=(50, 15, -90))
+                    click.FLOAT), default=(50, 15, -90), show_default=True,
+              help='Alpha, beta and gamma Euler angles. If you plots look rotated, you use wrong abg values. Usually nessesary only during the first use of the mesh.')
 @click.option('--clim','-c', type=click.Choice(['phc', 'woa05', 'gdem']),
               help='Select climatology to compare to. If option is set the model bias to climatology will be shown.')
 @click.option('--cmap', help='Name of the colormap from cmocean package or from the standard matplotlib set. By default `Spectral_r` will be used for property plots and `balance` for bias plots.')
 @click.option('--interp', type=click.Choice(['nn', 'idist', 'linear', 'cubic']),
-              default='nn')
-@click.option('--ptype', type=click.Choice(['cf', 'pcm']), default = 'cf')
+              default='nn', show_default=True,
+              help = 'Interpolation method. Options are nn - nearest neighbor (KDTree implementation, fast), idist - inverse distance (KDTree implementation, decent speed), linear (scipy implementation, slow) and cubic (scipy implementation, slowest and give strange results on corarse meshes).')
+@click.option('--ptype', type=click.Choice(['cf', 'pcm']), default = 'cf', show_default=True,
+              help = 'Plot type. Options are contourf (\'cf\') and pcolormesh (\'pcm\')')
+@click.option('-k', type=click.INT, default = 5, show_default=True,
+              help ='k-th nearest neighbors to use. Only used when interpolation method (--interp) is idist')
 def showfile(ifile, variable, depth,
              meshpath, box, res, influence,
-             timestep, levels, quiet, ofile, mapproj, abg, clim, cmap, interp, ptype):
+             timestep, levels, quiet, ofile, 
+             mapproj, abg, clim, cmap, interp, 
+             ptype, k):
     '''
     meshpath - Path to the folder with FESOM1.4 mesh files.
 
@@ -117,6 +125,8 @@ def showfile(ifile, variable, depth,
     level_data, nnn = pf.get_data(flf.variables[variable][sstep], mesh, realdepth)
     if interp =='nn':
         ofesom = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, radius_of_influence=radius_of_influence)
+    elif interp == 'idist':
+        ofesom = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, radius_of_influence=radius_of_influence, how = 'idist', k = k)
     elif interp == 'linear':
         points = np.vstack((mesh.x2, mesh.y2)).T
         qh = qhull.Delaunay(points)
@@ -126,10 +136,6 @@ def showfile(ifile, variable, depth,
         points = np.vstack((mesh.x2, mesh.y2)).T
         qh = qhull.Delaunay(points)
         ofesom = CloughTocher2DInterpolator(qh, level_data)((lonreg2, latreg2))
-
-
-
-
 
     if clim:
         if variable=='temp':
