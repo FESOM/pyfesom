@@ -10,3 +10,4 @@ dependencies:
   - numpydoc=0.7.0
   - joblib=0.11
   - sphinx=1.5
+  - seawater
