@@ -1,4 +1,7 @@
-name: fixnc-docs
+name: pyfesom-docs
+channels:
+  - conda-forge
+  - defaults
 dependencies:
   - python=2.7
   - netcdf4=1.1.8
