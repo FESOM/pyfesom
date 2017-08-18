@@ -23,7 +23,7 @@ Now you hopefully have all dependencies in plate and a version of `pyfesom` on y
 Tools
 -----
 
-Pyfesom tools are simple python scripts that are buld with use of the pyfesom library. To run the tool you should usually execute something like this::
+`Pyfesom tools <:ref:`tools`>`_ are simple python scripts that are buld with use of the pyfesom library. To run the tool you should usually execute something like this::
 
     python /path/to/installation/pyfesom/tools/showme.py /path/to/mesh/ /path/to/file.nc 
 
