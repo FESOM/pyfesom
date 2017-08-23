@@ -169,6 +169,7 @@ def scalar2geo(ifile, opath, variable,
         time[:] = fl.variables['time'][:]
     else:
         time[:] = fl.variables['time'][timestep]
+    print(time.shape)
 
     if fl.variables[variable].shape[1] == mesh.n2d:
         dim3d = False
@@ -182,7 +183,6 @@ def scalar2geo(ifile, opath, variable,
         timesteps = range(fl.variables[variable].shape[0])
     else:
         timesteps = range(timestep, timestep+1)
-
     if True:
         temp = fw.createVariable(variable,'d',\
                                 ('time','depth_coord','latitude','longitude'), \
@@ -211,9 +211,10 @@ def scalar2geo(ifile, opath, variable,
                     air_nearest =CloughTocher2DInterpolator(qh, level_data)((lonreg2, latreg2))
 
                 air_nearest = np.ma.masked_where(topo.mask, air_nearest)
-                temp[ttime,n,:,:] = air_nearest[:,:].filled(-9999)
-
-                print i
+                if timestep == -1:
+                    temp[ttime,n,:,:] = air_nearest[:,:].filled(-9999)
+                else:
+                    temp[0,n,:,:] = air_nearest[:,:].filled(-9999)
 
     fl.close()
     fw.close()
