@@ -1,3 +1,5 @@
+.. _tools:
+
 Tools
 =====
 Collection of mostly command line style utilites for working with FESOM ocean model output.
@@ -7,6 +9,8 @@ Collection of mostly command line style utilites for working with FESOM ocean mo
 * fesom2geo - interpolation from FESOM unstructured grid to lon/lat grid
 * f2l - convert fesom output to more convinient structure with layers
 * pcdo - execute cdo commands in parrallel
+
+:ref:`showme`
 
 .. toctree::
    :maxdepth: 2

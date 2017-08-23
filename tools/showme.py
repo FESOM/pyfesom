@@ -16,6 +16,9 @@ from cartopy.util import add_cyclic_point
 from scipy.interpolate import griddata
 import scipy.spatial.qhull as qhull
 from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
+from cartopy.util import add_cyclic_point
+
+
 
 @click.command()
 @click.argument('meshpath', type=click.Path(exists=True))
@@ -48,18 +51,27 @@ from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
               help='Path to the output figure. If present the image\
  will be saved to the file instead of showing it. ')
 @click.option('--mapproj','-m', type=click.Choice(['merc', 'pc', 'np', 'sp', 'rob']),
-              default='rob')
+              default='rob', show_default=True, 
+              help = 'Map projection. Options are Mercator (merc), Plate Carree (pc), North Polar Stereo (np), South Polar Stereo (sp),  Robinson (rob)')
 @click.option('--abg', nargs=3, type=(click.FLOAT,
                     click.FLOAT,
-                    click.FLOAT), default=(50, 15, -90))
+                    click.FLOAT), default=(50, 15, -90), show_default=True,
+              help='Alpha, beta and gamma Euler angles. If you plots look rotated, you use wrong abg values. Usually nessesary only during the first use of the mesh.')
 @click.option('--clim','-c', type=click.Choice(['phc', 'woa05', 'gdem']),
               help='Select climatology to compare to. If option is set the model bias to climatology will be shown.')
 @click.option('--cmap', help='Name of the colormap from cmocean package or from the standard matplotlib set. By default `Spectral_r` will be used for property plots and `balance` for bias plots.')
 @click.option('--interp', type=click.Choice(['nn', 'idist', 'linear', 'cubic']),
-              default='nn')
+              default='nn', show_default=True,
+              help = 'Interpolation method. Options are nn - nearest neighbor (KDTree implementation, fast), idist - inverse distance (KDTree implementation, decent speed), linear (scipy implementation, slow) and cubic (scipy implementation, slowest and give strange results on corarse meshes).')
+@click.option('--ptype', type=click.Choice(['cf', 'pcm']), default = 'cf', show_default=True,
+              help = 'Plot type. Options are contourf (\'cf\') and pcolormesh (\'pcm\')')
+@click.option('-k', type=click.INT, default = 5, show_default=True,
+              help ='k-th nearest neighbors to use. Only used when interpolation method (--interp) is idist')
 def showfile(ifile, variable, depth,
              meshpath, box, res, influence,
-             timestep, levels, quiet, ofile, mapproj, abg, clim, cmap, interp):
+             timestep, levels, quiet, ofile, 
+             mapproj, abg, clim, cmap, interp, 
+             ptype, k):
     '''
     meshpath - Path to the folder with FESOM1.4 mesh files.
 
@@ -80,7 +92,7 @@ def showfile(ifile, variable, depth,
             click.secho('Levels: {}'.format(levels), fg='red')
         else:
             click.secho('Levels: auto', fg='red')
-    
+
     if cmap:
         if cmap in cmo.cmapnames:
             colormap = cmo.cmap_d[cmap]
@@ -94,7 +106,7 @@ def showfile(ifile, variable, depth,
         else:
             colormap = plt.get_cmap('Spectral_r')
 
-    
+
     sstep = timestep
     radius_of_influence = influence
 
@@ -106,26 +118,24 @@ def showfile(ifile, variable, depth,
     lonreg = np.linspace(left, right, lonNumber)
     latreg = np.linspace(down, up, latNumber)
     lonreg2, latreg2 = np.meshgrid(lonreg, latreg)
-    
+
     dind=(abs(mesh.zlevs-depth)).argmin()
     realdepth = mesh.zlevs[dind]
-    
+
     level_data, nnn = pf.get_data(flf.variables[variable][sstep], mesh, realdepth)
     if interp =='nn':
         ofesom = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, radius_of_influence=radius_of_influence)
+    elif interp == 'idist':
+        ofesom = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, radius_of_influence=radius_of_influence, how = 'idist', k = k)
     elif interp == 'linear':
         points = np.vstack((mesh.x2, mesh.y2)).T
         qh = qhull.Delaunay(points)
         ofesom = LinearNDInterpolator(qh, level_data)((lonreg2, latreg2))
-        
+
     elif interp == 'cubic':
         points = np.vstack((mesh.x2, mesh.y2)).T
         qh = qhull.Delaunay(points)
         ofesom = CloughTocher2DInterpolator(qh, level_data)((lonreg2, latreg2))
-
-
-
-    
 
     if clim:
         if variable=='temp':
@@ -144,9 +154,9 @@ def showfile(ifile, variable, depth,
         data = ofesom - oclim
     else:
         data = ofesom
-    
 
-    
+
+
     if mapproj == 'merc':
         ax = plt.subplot(111, projection=ccrs.Mercator())
     elif mapproj == 'pc':
@@ -171,18 +181,32 @@ def showfile(ifile, variable, depth,
 
 
     data_levels = np.linspace(mmin, mmax, nnum)
-
-    mm = ax.contourf(lonreg,\
+    if ptype == 'cf':
+        mm = ax.contourf(lonreg,\
                      latreg,\
                      data,
                      levels = data_levels,
                      transform=ccrs.PlateCarree(),
                      cmap=colormap,
                     extend='both')
+    elif ptype == 'pcm':
+        data_cyc, lon_cyc = add_cyclic_point(data, coord=lonreg)
+        mm = ax.pcolormesh(lon_cyc,\
+                         latreg,\
+                         data_cyc,
+                         vmin = mmin,
+                         vmax = mmax,
+                         transform=ccrs.PlateCarree(),
+                         cmap=colormap,
+                        )
+    else:
+        raise ValueError('Inknown plot type {}'.format(ptype))
+
     ax.coastlines(resolution = '50m',lw=0.5)
     ax.add_feature(cfeature.GSHHSFeature(levels=[1], scale='low', facecolor='lightgray'))
     cb = plt.colorbar(mm, orientation='horizontal', pad=0.03)
-    plt.title('{} at {}m'.format(variable, realdepth))
+    cb.set_label(flf.variables[variable].units)
+    plt.title('{} at {}m.'.format(variable, realdepth))
     plt.tight_layout()
     if ofile:
         plt.savefig(ofile, dpi=100)
