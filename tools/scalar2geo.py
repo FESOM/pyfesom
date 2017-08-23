@@ -19,7 +19,7 @@ from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
 @click.argument('ipath', nargs=-1, type=click.Path(exists=True), required=True)
 @click.argument('opath', nargs=1, required=False, default='./')
 @click.argument('variable', nargs=1, required=False, default='temp')
-@click.option('--depths', '-d', default=-1, type=click.STRING,show_default=True,
+@click.option('--depths', '-d', default='-1', type=click.STRING,show_default=True,
                help='Depths in meters.')
 @click.option('--box', '-b',
               nargs=4,
