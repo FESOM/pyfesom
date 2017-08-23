@@ -19,7 +19,7 @@ from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
 @click.argument('ipath', nargs=-1, type=click.Path(exists=True), required=True)
 @click.argument('opath', nargs=1, required=False, default='./')
 @click.argument('variable', nargs=1, required=False, default='temp')
-@click.option('--depths', '-d', default=-1, type=click.STRING,show_default=True,
+@click.option('--depths', '-d', default='-1', type=click.STRING,show_default=True,
                help='Depths in meters.')
 @click.option('--box', '-b',
               nargs=4,
@@ -47,7 +47,7 @@ def convert(meshpath, ipath, opath, variable, depths, box,
             res, influence, timestep, abg, interp):
     print(ipath)
     mesh = pf.load_mesh(meshpath, abg=abg, usepickle=False, usejoblib=True)
-    
+
     sstep = timestep
     radius_of_influence = influence
 
@@ -57,15 +57,15 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     lonreg = np.linspace(left, right, lonNumber)
     latreg = np.linspace(down, up, latNumber)
     lonreg2, latreg2 = np.meshgrid(lonreg, latreg)
-    
+
     localdir = os.path.join(os.path.dirname(__file__))
     print(localdir)
     with open(localdir+'/CMIP6_Omon.json') as data_file:
         cmore_table = json.load(data_file, object_pairs_hook=OrderedDict)
 
-    with open(localdir+'/CMIP6_SIday.json') as data_file:    
+    with open(localdir+'/CMIP6_SIday.json') as data_file:
         cmore_table_ice = json.load(data_file, object_pairs_hook=OrderedDict)
-    
+
     depths = np.array(depths.split(' '),dtype='float32')
     if depths[0] == -1:
         dind = range(mesh.zlevs.shape[0])
@@ -83,7 +83,7 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     k = 10
     distances, inds = pf.create_indexes_and_distances(mesh, lonreg2, latreg2,\
                                                       k=k, n_jobs=4)
-    
+
     ind_depth_all = []
     ind_noempty_all = []
     ind_empty_all = []
@@ -123,23 +123,23 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     ncore=2
     Parallel(n_jobs=ncore, verbose=50)(delayed(scalar2geo)(ifile, opath, variable,
                                        mesh, ind_noempty_all,
-                                       ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2, 
+                                       ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2,
                                        distances, inds, radius_of_influence, topo, points, interp, qh, timestep, dind, realdepth) for ifile in ipath)
     # scalar2geo(ipath, opath, variable,
     #            mesh, ind_noempty_all,
-    #            ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2, 
+    #            ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2,
     #            distances, inds, radius_of_influence, topo, points, interp, qh, timestep)
 
 def scalar2geo(ifile, opath, variable,
                mesh, ind_noempty_all,
-               ind_empty_all,ind_depth_all, cmore_table, 
-               lonreg2, latreg2, distances, inds, radius_of_influence, 
+               ind_empty_all,ind_depth_all, cmore_table,
+               lonreg2, latreg2, distances, inds, radius_of_influence,
                topo, points, interp, qh, timestep, dind, realdepth):
     print(ifile)
     ext = variable
     #ifile = ipath
     ofile = os.path.join(opath, '{}_{}.nc'.format(os.path.basename(ifile)[:-3], ext))
-    
+
     fl = Dataset(ifile)
     fw = Dataset(ofile, mode='w',data_model='NETCDF4_CLASSIC', )
 
@@ -174,7 +174,7 @@ def scalar2geo(ifile, opath, variable,
         dim3d = True
     else:
         raise ValueError('Variable size {} is not equal to number of 2d ({}) or 3d ({}) nodes'.format(fl.variables[variable].shape[1], mesh.n2d, mesh.n3d))
-    
+
     # ii = LinearNDInterpolator(qh, mesh.topo)
     if timestep == -1:
         timesteps = range(fl.variables[variable].shape[0])
@@ -185,7 +185,7 @@ def scalar2geo(ifile, opath, variable,
         temp = fw.createVariable(variable,'d',\
                                 ('time','depth_coord','latitude','longitude'), \
                                 fill_value=-9999, zlib=False, complevel=1)
-        
+
         for ttime in timesteps:
 
             all_layers = fl.variables[variable][ttime,:]
@@ -215,8 +215,8 @@ def scalar2geo(ifile, opath, variable,
 
     fl.close()
     fw.close()
-    
-    
+
+
     # var2d = 0
     # var3d = 0
     # for varname in out_vars:
@@ -226,7 +226,7 @@ def scalar2geo(ifile, opath, variable,
     #         var3d += 1
     # var3d = var3d*len(levels)*fl.variables['time'].shape[0]
     # var2d = var2d*fl.variables['time'].shape[0]
-    # progress_total  = var3d+var2d 
+    # progress_total  = var3d+var2d
     # progress_passed = 0
 
 def noempty_dict(d):
