@@ -45,8 +45,9 @@ from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
                     click.FLOAT,
                     click.FLOAT), default=(50, 15, -90),
               help='Alpha, beta and gamma Euler angles. If you plots look rotated, you use wrong abg values. Usually nessesary only during the first use of the mesh.')
+@click.option('--ncore', '-n', default = 1, help='Number of cores to use in parralel')
 def convert(meshpath, ipath, opath, variable, depths, box,
-            res, influence, timestep, abg, interp):
+            res, influence, timestep, abg, interp, ncore):
     print(ipath)
     mesh = pf.load_mesh(meshpath, abg=abg, usepickle=False, usejoblib=True)
 
@@ -122,7 +123,7 @@ def convert(meshpath, ipath, opath, variable, depths, box,
 
     mdata = maskoceans(lonreg2, latreg2, topo_interp, resolution = 'h', inlands=False)
     topo = np.ma.masked_where(~mdata.mask, topo_interp)
-    ncore=2
+    
     # For now the backend is switched to threading, since default multiprocessing
     # does not work with linear and cubic interpolations due to problems with
     # memory mapping. One have to test threading vs multiprocessing.
