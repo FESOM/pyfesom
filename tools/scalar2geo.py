@@ -123,7 +123,10 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     mdata = maskoceans(lonreg2, latreg2, topo_interp, resolution = 'h', inlands=False)
     topo = np.ma.masked_where(~mdata.mask, topo_interp)
     ncore=2
-    Parallel(n_jobs=ncore, verbose=50)(delayed(scalar2geo)(ifile, opath, variable,
+    # For now the backend is switched to threading, since default multiprocessing
+    # does not work with linear and cubic interpolations due to problems with
+    # memory mapping. One have to test threading vs multiprocessing.
+    Parallel(n_jobs=ncore, backend='threading', verbose=50)(delayed(scalar2geo)(ifile, opath, variable,
                                        mesh, ind_noempty_all,
                                        ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2,
                                        distances, inds, radius_of_influence, topo, points, interp, qh, timestep, dind, realdepth) for ifile in ipath)
@@ -206,6 +209,9 @@ def scalar2geo(ifile, opath, variable,
                     air_nearest = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, distances=distances,
                                             inds=inds, radius_of_influence=radius_of_influence, n_jobs=1, how='idist')
                 elif interp == 'linear':
+                    #level_data = level_data.copy()
+                    #lonreg2 = lonreg2.tolist()
+                    #latreg2 = latreg2.tolist()
                     air_nearest = LinearNDInterpolator(qh, level_data)((lonreg2, latreg2))
                 elif interp == 'cubic':
                     air_nearest =CloughTocher2DInterpolator(qh, level_data)((lonreg2, latreg2))
