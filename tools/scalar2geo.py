@@ -46,8 +46,9 @@ from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
                     click.FLOAT), default=(50, 15, -90),
               help='Alpha, beta and gamma Euler angles. If you plots look rotated, you use wrong abg values. Usually nessesary only during the first use of the mesh.')
 @click.option('--ncore', '-n', default = 1, help='Number of cores to use in parralel')
+@click.option('-k', default=5)
 def convert(meshpath, ipath, opath, variable, depths, box,
-            res, influence, timestep, abg, interp, ncore):
+            res, influence, timestep, abg, interp, ncore, k):
     print(ipath)
     mesh = pf.load_mesh(meshpath, abg=abg, usepickle=False, usejoblib=True)
 
@@ -83,7 +84,7 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     print(dind)
     print(realdepth)
     #realdepth = mesh.zlevs[dind]
-    k = 10
+    
     distances, inds = pf.create_indexes_and_distances(mesh, lonreg2, latreg2,\
                                                       k=k, n_jobs=4)
 
@@ -106,7 +107,7 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     elif interp == 'idist':
         topo_interp = pf.fesom2regular(mesh.topo, mesh, lonreg2, latreg2, distances=distances,
                                 inds=inds, radius_of_influence=radius_of_influence, n_jobs=1, how='idist')
-        k = 5
+        k = k
         distances, inds = pf.create_indexes_and_distances(mesh, lonreg2, latreg2,\
                                                           k=k, n_jobs=4)
         points, qh = None, None
@@ -124,10 +125,15 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     mdata = maskoceans(lonreg2, latreg2, topo_interp, resolution = 'h', inlands=False)
     topo = np.ma.masked_where(~mdata.mask, topo_interp)
     
-    # For now the backend is switched to threading, since default multiprocessing
-    # does not work with linear and cubic interpolations due to problems with
-    # memory mapping. One have to test threading vs multiprocessing.
-    Parallel(n_jobs=ncore, backend='threading', verbose=50)(delayed(scalar2geo)(ifile, opath, variable,
+    # Backend is switched to threading for linear and cubic interpolations
+    # due to problems with memory mapping.
+    # One have to test threading vs multiprocessing.
+    if (interp == 'linear') or (interp=='cubic'):
+        backend = 'threading'
+    else:
+        backend = 'multiprocessing'
+
+    Parallel(n_jobs=ncore, backend=backend, verbose=50)(delayed(scalar2geo)(ifile, opath, variable,
                                        mesh, ind_noempty_all,
                                        ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2,
                                        distances, inds, radius_of_influence, topo, points, interp, qh, timestep, dind, realdepth) for ifile in ipath)
@@ -216,6 +222,8 @@ def scalar2geo(ifile, opath, variable,
                     air_nearest = LinearNDInterpolator(qh, level_data)((lonreg2, latreg2))
                 elif interp == 'cubic':
                     air_nearest =CloughTocher2DInterpolator(qh, level_data)((lonreg2, latreg2))
+                    print('cubic')
+                    print(air_nearest.min())
 
                 air_nearest = np.ma.masked_where(topo.mask, air_nearest)
                 if timestep == -1:
