@@ -19,7 +19,7 @@ from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
 @click.argument('ipath', nargs=-1, type=click.Path(exists=True), required=True)
 @click.argument('opath', nargs=1, required=False, default='./')
 @click.argument('variable', nargs=1, required=False, default='temp')
-@click.option('--depths', '-d', default=-1, type=click.STRING,show_default=True,
+@click.option('--depths', '-d', default='-1', type=click.STRING,show_default=True,
                help='Depths in meters.')
 @click.option('--box', '-b',
               nargs=4,
@@ -45,11 +45,13 @@ from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
                     click.FLOAT,
                     click.FLOAT), default=(50, 15, -90),
               help='Alpha, beta and gamma Euler angles. If you plots look rotated, you use wrong abg values. Usually nessesary only during the first use of the mesh.')
+@click.option('--ncore', '-n', default = 1, help='Number of cores to use in parralel')
+@click.option('-k', default=5)
 def convert(meshpath, ipath, opath, variable, depths, box,
-            res, influence, timestep, abg, interp):
+            res, influence, timestep, abg, interp, ncore, k):
     print(ipath)
     mesh = pf.load_mesh(meshpath, abg=abg, usepickle=False, usejoblib=True)
-    
+
     sstep = timestep
     radius_of_influence = influence
 
@@ -59,15 +61,15 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     lonreg = np.linspace(left, right, lonNumber)
     latreg = np.linspace(down, up, latNumber)
     lonreg2, latreg2 = np.meshgrid(lonreg, latreg)
-    
+
     localdir = os.path.join(os.path.dirname(__file__))
     print(localdir)
     with open(localdir+'/CMIP6_Omon.json') as data_file:
         cmore_table = json.load(data_file, object_pairs_hook=OrderedDict)
 
-    with open(localdir+'/CMIP6_SIday.json') as data_file:    
+    with open(localdir+'/CMIP6_SIday.json') as data_file:
         cmore_table_ice = json.load(data_file, object_pairs_hook=OrderedDict)
-    
+
     depths = np.array(depths.split(' '),dtype='float32')
     if depths[0] == -1:
         dind = range(mesh.zlevs.shape[0])
@@ -82,10 +84,10 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     print(dind)
     print(realdepth)
     #realdepth = mesh.zlevs[dind]
-    k = 10
+    
     distances, inds = pf.create_indexes_and_distances(mesh, lonreg2, latreg2,\
                                                       k=k, n_jobs=4)
-    
+
     ind_depth_all = []
     ind_noempty_all = []
     ind_empty_all = []
@@ -105,7 +107,7 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     elif interp == 'idist':
         topo_interp = pf.fesom2regular(mesh.topo, mesh, lonreg2, latreg2, distances=distances,
                                 inds=inds, radius_of_influence=radius_of_influence, n_jobs=1, how='idist')
-        k = 5
+        k = k
         distances, inds = pf.create_indexes_and_distances(mesh, lonreg2, latreg2,\
                                                           k=k, n_jobs=4)
         points, qh = None, None
@@ -122,26 +124,34 @@ def convert(meshpath, ipath, opath, variable, depths, box,
 
     mdata = maskoceans(lonreg2, latreg2, topo_interp, resolution = 'h', inlands=False)
     topo = np.ma.masked_where(~mdata.mask, topo_interp)
-    ncore=2
-    Parallel(n_jobs=ncore, verbose=50)(delayed(scalar2geo)(ifile, opath, variable,
+    
+    # Backend is switched to threading for linear and cubic interpolations
+    # due to problems with memory mapping.
+    # One have to test threading vs multiprocessing.
+    if (interp == 'linear') or (interp=='cubic'):
+        backend = 'threading'
+    else:
+        backend = 'multiprocessing'
+
+    Parallel(n_jobs=ncore, backend=backend, verbose=50)(delayed(scalar2geo)(ifile, opath, variable,
                                        mesh, ind_noempty_all,
-                                       ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2, 
+                                       ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2,
                                        distances, inds, radius_of_influence, topo, points, interp, qh, timestep, dind, realdepth) for ifile in ipath)
     # scalar2geo(ipath, opath, variable,
     #            mesh, ind_noempty_all,
-    #            ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2, 
+    #            ind_empty_all,ind_depth_all, cmore_table, lonreg2, latreg2,
     #            distances, inds, radius_of_influence, topo, points, interp, qh, timestep)
 
 def scalar2geo(ifile, opath, variable,
                mesh, ind_noempty_all,
-               ind_empty_all,ind_depth_all, cmore_table, 
-               lonreg2, latreg2, distances, inds, radius_of_influence, 
+               ind_empty_all,ind_depth_all, cmore_table,
+               lonreg2, latreg2, distances, inds, radius_of_influence,
                topo, points, interp, qh, timestep, dind, realdepth):
     print(ifile)
     ext = variable
     #ifile = ipath
     ofile = os.path.join(opath, '{}_{}.nc'.format(os.path.basename(ifile)[:-3], ext))
-    
+
     fl = Dataset(ifile)
     fw = Dataset(ofile, mode='w',data_model='NETCDF4_CLASSIC', )
 
@@ -169,6 +179,7 @@ def scalar2geo(ifile, opath, variable,
         time[:] = fl.variables['time'][:]
     else:
         time[:] = fl.variables['time'][timestep]
+    print(time.shape)
 
     if fl.variables[variable].shape[1] == mesh.n2d:
         dim3d = False
@@ -176,18 +187,17 @@ def scalar2geo(ifile, opath, variable,
         dim3d = True
     else:
         raise ValueError('Variable size {} is not equal to number of 2d ({}) or 3d ({}) nodes'.format(fl.variables[variable].shape[1], mesh.n2d, mesh.n3d))
-    
+
     # ii = LinearNDInterpolator(qh, mesh.topo)
     if timestep == -1:
         timesteps = range(fl.variables[variable].shape[0])
     else:
         timesteps = range(timestep, timestep+1)
-
     if True:
         temp = fw.createVariable(variable,'d',\
                                 ('time','depth_coord','latitude','longitude'), \
                                 fill_value=-9999, zlib=False, complevel=1)
-        
+
         for ttime in timesteps:
 
             all_layers = fl.variables[variable][ttime,:]
@@ -206,19 +216,25 @@ def scalar2geo(ifile, opath, variable,
                     air_nearest = pf.fesom2regular(level_data, mesh, lonreg2, latreg2, distances=distances,
                                             inds=inds, radius_of_influence=radius_of_influence, n_jobs=1, how='idist')
                 elif interp == 'linear':
+                    #level_data = level_data.copy()
+                    #lonreg2 = lonreg2.tolist()
+                    #latreg2 = latreg2.tolist()
                     air_nearest = LinearNDInterpolator(qh, level_data)((lonreg2, latreg2))
                 elif interp == 'cubic':
                     air_nearest =CloughTocher2DInterpolator(qh, level_data)((lonreg2, latreg2))
+                    print('cubic')
+                    print(air_nearest.min())
 
                 air_nearest = np.ma.masked_where(topo.mask, air_nearest)
-                temp[ttime,n,:,:] = air_nearest[:,:].filled(-9999)
-
-                print i
+                if timestep == -1:
+                    temp[ttime,n,:,:] = air_nearest[:,:].filled(-9999)
+                else:
+                    temp[0,n,:,:] = air_nearest[:,:].filled(-9999)
 
     fl.close()
     fw.close()
-    
-    
+
+
     # var2d = 0
     # var3d = 0
     # for varname in out_vars:
@@ -228,7 +244,7 @@ def scalar2geo(ifile, opath, variable,
     #         var3d += 1
     # var3d = var3d*len(levels)*fl.variables['time'].shape[0]
     # var2d = var2d*fl.variables['time'].shape[0]
-    # progress_total  = var3d+var2d 
+    # progress_total  = var3d+var2d
     # progress_passed = 0
 
 def noempty_dict(d):
