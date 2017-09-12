@@ -6,7 +6,7 @@ Collection of mostly command line style utilites for working with FESOM ocean mo
 
 * :ref:`showme <showme>` - shows FESOM data interpolated to regular grid, also can show bias ro climatology.
 * :ref:`showo <showo>`  - shows FESOM data on original grid, usually used to have a look at small regions.
-* fesom2geo - interpolation from FESOM unstructured grid to lon/lat grid
+* :ref:`scalar2geo <scalar2geo>` - interpolation from FESOM unstructured grid to lon/lat grid
 * f2l - convert fesom output to more convinient structure with layers
 * pcdo - execute cdo commands in parrallel
 
@@ -18,3 +18,4 @@ Collection of mostly command line style utilites for working with FESOM ocean mo
 
    showme
    showo
+   scalar2geo

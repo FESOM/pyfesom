@@ -17,8 +17,8 @@ from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
 @click.command()
 @click.argument('meshpath', type=click.Path(exists=True), required=True)
 @click.argument('ipath', nargs=-1, type=click.Path(exists=True), required=True)
-@click.argument('opath', nargs=1, required=False, default='./')
-@click.argument('variable', nargs=1, required=False, default='temp')
+@click.argument('opath', nargs=1, required=True, default='./')
+@click.argument('variable', nargs=1, required=True, default='temp')
 @click.option('--depths', '-d', default='-1', type=click.STRING,show_default=True,
                help='Depths in meters.')
 @click.option('--box', '-b',
@@ -46,9 +46,18 @@ from scipy.interpolate import LinearNDInterpolator, CloughTocher2DInterpolator
                     click.FLOAT), default=(50, 15, -90),
               help='Alpha, beta and gamma Euler angles. If you plots look rotated, you use wrong abg values. Usually nessesary only during the first use of the mesh.')
 @click.option('--ncore', '-n', default = 1, help='Number of cores to use in parralel')
-@click.option('-k', default=5)
+@click.option('-k', default=5, help='Number of neighbors to take in to account for idist interpolation.')
 def convert(meshpath, ipath, opath, variable, depths, box,
             res, influence, timestep, abg, interp, ncore, k):
+    '''
+    meshpath - Path to the folder with FESOM1.4 mesh files.
+
+    ipath    - Path to FESOM1.4 netCDF file or files (with wildcard).
+
+    opath    - path where the output will be stored.
+
+    variable - The netCDF variable to be converted.
+    '''
     print(ipath)
     mesh = pf.load_mesh(meshpath, abg=abg, usepickle=False, usejoblib=True)
 
