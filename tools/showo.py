@@ -33,13 +33,11 @@ from cartopy.util import add_cyclic_point
               help='Timstep from netCDF variable, strats with 0.')
 @click.option('--minmax', '-l', nargs=2, type=click.INT,
               help='Minimun and maximum values for plotting.')
-@click.option('--mapproj','-m', type=click.Choice(['merc', 'pc','np','sp', 'rob']),
-               default='merc')
+@click.option('--mapproj','-m', type=click.Choice(['merc', 'pc','np','sp', 'rob']), default='merc', help = 'Map projection. Options are Mercator (merc), Plate Carree (pc), North Polar Stereo (np), South Polar Stereo (sp),  Robinson (rob)')
 @click.option('--quiet', '-q', is_flag=True,
               help='If present additional information will not be printed.')
 @click.option('--ofile','-o' ,type=click.Path(exists=False) ,
-              help='Path to the output figure. If present the image\
-              will be saved to the file instead of showing it. ')
+              help='Path to the output figure. If present the image will be saved to the file instead of showing it. ')
 def showo(meshpath, ifile, variable, 
           depth, box, timestep, minmax, 
           mapproj, quiet, ofile):
