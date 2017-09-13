@@ -1,6 +1,6 @@
 .. _scalar2geo:
 
-Scalar2geo
+scalar2geo
 ==========
 
 Interpolates scalar data from FESOM mesh to regular lon/lat grid.

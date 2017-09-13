@@ -1,9 +1,9 @@
 .. _showme:
 
-Showme
+showme
 ======
 
-Simple visualization tool for FESOM data. `Python <http://www.python.org/>`_ 
+Simple visualization tool for FESOM data.
 
 Basic usage
 -----------

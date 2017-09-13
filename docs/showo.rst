@@ -1,6 +1,6 @@
 .. _showo:
 
-Showo
+showo
 =====
 
 Shows FESOM data on original grid.
