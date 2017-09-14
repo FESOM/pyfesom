@@ -14,7 +14,7 @@
 import pandas as pd
 import numpy as np
 from netCDF4 import Dataset
-from .ut import scalar_r2g
+from . import ut
 from scipy.io import netcdf # replace it with netCDF4
 import os
 import logging
@@ -271,7 +271,7 @@ class fesom_mesh(object):
                 self.lump2[n]=self.lump2[n]+self.voltri[j]
         self.lump2=self.lump2/3.
 
-        self.x2, self.y2 = scalar_r2g(self.alpha,self.beta,self.gamma,self.x2, self.y2)
+        self.x2, self.y2 = ut.scalar_r2g(self.alpha,self.beta,self.gamma,self.x2, self.y2)
         d=self.x2[self.elem].max(axis=1) - self.x2[self.elem].min(axis=1)
         self.no_cyclic_elem = [i for (i, val) in enumerate(d) if val < 100]
 
@@ -411,7 +411,7 @@ def read_fesom_mesh(path, alpha, beta, gamma, read_diag=True):
         mesh.cluster_vol3=0
         mesh.cluster_vol2=0
     #we should rotate the mesh to the geographical coordinates
-    (mesh.x2,mesh.y2)=scalar_r2g(mesh.alpha,mesh.beta,mesh.gamma,mesh.x2,mesh.y2)
+    (mesh.x2,mesh.y2)=ut.scalar_r2g(mesh.alpha,mesh.beta,mesh.gamma,mesh.x2,mesh.y2)
     d=mesh.x2[mesh.elem].max(axis=1)-mesh.x2[mesh.elem].min(axis=1)
     mesh.no_cyclic_elem = [i for (i, val) in enumerate(d) if val < 100]
     return mesh
@@ -603,7 +603,49 @@ def get_layer_mean(data, depth, mesh, timeslice=None):
 
     return data_mean, elem_no_nan
 
+def cut_region(mesh, box=[13, 30, 53, 66], depth=0):
+    '''
+    Cut region from the mesh.
 
+    Parameters
+    ----------
+    mesh : object
+        FESOM mesh object
+    box : list
+        Coordinates of the box in [-180 180 -90 90] format.
+        Default set to [13, 30, 53, 66], Baltic Sea.
+    depth : float
+        depth
+
+    Returns
+    -------
+    elem_no_nan : array
+        elements that belong to the region defined by `box`.
+    no_nan_triangles : array
+        boolian array of size elem2d with True for elements 
+        that belong to the region defines by `box`.
+    '''
+    depth = 0
+    left, right, down, up = box
+    ind_depth, ind_noempty, ind_empty = ind_for_depth(depth, mesh)
+    elem2 = mesh.elem
+    xx = mesh.x2[elem2]
+    yy = mesh.y2[elem2]
+    dd = ind_depth[elem2]
+
+    vvv = ((dd>=0) & (xx>=left) & (xx<=right) & (yy>=down) & (yy<=up))
+    indd = np.where((ind_depth>=0) &
+                    (mesh.x2>=left) &
+                    (mesh.x2<=right) &
+                    (mesh.y2>=down) &
+                    (mesh.y2<=up))
+    ccc = vvv.mean(axis=1)
+    ccc[ccc!=1] = np.nan
+
+    no_nan_triangles = np.invert(np.isnan(ccc))
+    elem_no_nan = elem2[no_nan_triangles,:]
+
+    return elem_no_nan, no_nan_triangles
 
 
 
