@@ -1,7 +1,7 @@
 import click
 from netCDF4 import Dataset
 import matplotlib as mpl
-mpl.use('Qt4Agg')
+mpl.use('Qt5Agg')
 #%matplotlib inline
 import matplotlib.pylab as plt
 import numpy as np

@@ -71,8 +71,9 @@ def convert(meshpath, ipath, opath, variable, depths, box,
     latreg = np.linspace(down, up, latNumber)
     lonreg2, latreg2 = np.meshgrid(lonreg, latreg)
 
-    localdir = os.path.join(os.path.dirname(__file__))
-    print(localdir)
+    localdir = os.path.dirname(os.path.abspath(__file__))
+    # print(os.path.abspath(__file__))
+    print('localdir='+localdir)
     with open(localdir+'/CMIP6_Omon.json') as data_file:
         cmore_table = json.load(data_file, object_pairs_hook=OrderedDict)
 
@@ -271,7 +272,7 @@ def noempty_dict(d):
         output dict with empty strings removed
     '''
     d_out = OrderedDict()
-    for key, value in d.iteritems():
+    for key, value in d.items():
         if value != u'':
             d_out[key]=value
     return d_out
