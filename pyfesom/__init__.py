@@ -12,6 +12,9 @@ from .regriding import *
 from .woa2005 import *
 from .ut import *
 from .climatology import *
+from .transect import *
+from .plotting import *
+
 
 
 __author__   = 'FESOM team'
