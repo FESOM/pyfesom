@@ -625,7 +625,7 @@ def cut_region(mesh, box=[13, 30, 53, 66], depth=0):
         boolian array of size elem2d with True for elements 
         that belong to the region defines by `box`.
     '''
-    depth = 0
+
     left, right, down, up = box
     ind_depth, ind_noempty, ind_empty = ind_for_depth(depth, mesh)
     elem2 = mesh.elem
