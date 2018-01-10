@@ -16,6 +16,7 @@ from cmocean import cm as cmo
 import palettable
 import matplotlib as mpl
 from .transect import *
+import math
 
 
 def plot_transect_map(lon_start, lat_start, lon_end, lat_end, 
@@ -51,28 +52,84 @@ def plot_transect(data3d, mesh, lon_start,
                   lat_end,
                   npoints=30,
                   maxdepth = 1000,
-                  levels = None,
-                  cmap = cm.Spectral_r,
                   label = '$^{\circ}$C',
-                  title = ''):
+                  title = '',
+                  levels=None,
+                  cmap = cm.Spectral_r,
+                  ax = None, 
+                  dist = None,
+                  profile = None, 
+                  ncols = 2,
+                  figsize = None):
 
-    lonlat = transect_get_lonlat(lon_start, lat_start, lon_end, lat_end, npoints=npoints)
-    nodes  = transect_get_nodes(lonlat, mesh)
-    dist   = transect_get_distance(lonlat)
-    profile = transect_get_profile(nodes, mesh)
-#     data3d =  fl.variables['salt'][0,:]
-    transect_data = transect_get_data(data3d, profile)
-    
-#     plt.figure(figsize=(10,5))
+        
     depth_index=(abs(mesh.zlevs-maxdepth)).argmin()
-    plt.subplot(1,1,1)
-    trsplt = plt.contourf( dist, mesh.zlevs[:depth_index], transect_data[:,:depth_index].T, levels = levels, 
-                 cmap = cmap, 
-                 extend='both')
-    cb = plt.colorbar()
-    cb.set_label(label)
-    plt.gca().invert_yaxis()
-    plt.title(title)
-    plt.xlabel('km')
-    plt.ylabel('m')
-    return trsplt
+    if not isinstance(data3d, list):
+        if ax is None:
+            ax = plt.gca()
+            oneplot = True
+        else:
+            oneplot = False
+        if ((type(dist) is np.ndarray) and (type(profile) is np.ndarray)):
+            transect_data = transect_get_data(data3d, profile)
+        else:
+            lonlat = transect_get_lonlat(lon_start, lat_start, lon_end, lat_end, npoints=npoints)
+            nodes  = transect_get_nodes(lonlat, mesh)
+            dist   = transect_get_distance(lonlat)
+            profile = transect_get_profile(nodes, mesh)
+            transect_data = transect_get_data(data3d, profile)
+            
+        image = ax.contourf( dist, mesh.zlevs[:depth_index], transect_data[:,:depth_index].T,
+                            levels = levels, cmap = cmap, extend='both')
+        ax.invert_yaxis()
+        ax.set_title(title)
+        ax.set_xlabel('km')
+        ax.set_ylabel('m')
+
+        if oneplot:
+            cb = plt.colorbar(image)
+            cb.set_label(label)
+
+
+        return image
+    else:
+            ncols = float(ncols)
+            nplots = len(data3d)
+            nrows = math.ceil(nplots/ncols)
+            ncols = int(ncols)
+            nrows = int(nrows)
+            nplot = 1
+
+            if not figsize:
+                figsize = (8*ncols,2*nrows*ncols)
+            fig, ax = plt.subplots(nrows,ncols, figsize=figsize)
+            ax = ax.flatten()
+            for ind, data in enumerate(data3d):
+                if ((type(dist) is np.ndarray) and (type(profile) is np.ndarray)):
+                    transect_data = transect_get_data(data, profile)
+                else:
+                    lonlat = transect_get_lonlat(lon_start, lat_start, lon_end, lat_end, npoints=npoints)
+                    nodes  = transect_get_nodes(lonlat, mesh)
+                    dist   = transect_get_distance(lonlat)
+                    profile = transect_get_profile(nodes, mesh)
+                    transect_data = transect_get_data(data, profile)
+
+                image = ax[ind].contourf( dist, mesh.zlevs[:depth_index], transect_data[:,:depth_index].T,
+                                    levels = levels, cmap = cmap, extend='both')
+                ax[ind].invert_yaxis()
+                if not isinstance(title, list):
+                    ax[ind].set_title(title)
+                else:
+                    ax[ind].set_title(title[ind])
+                ax[ind].set_xlabel('km')
+                ax[ind].set_ylabel('m')
+                
+                cb = fig.colorbar(image, orientation='horizontal', ax=ax[ind], pad=0.11)
+                cb.set_label(label)
+            for delind in range(ind+1, len(ax)):
+                print(delind)
+                fig.delaxes(ax[delind])
+
+            fig.tight_layout()
+            
+                
