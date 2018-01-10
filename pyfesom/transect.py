@@ -44,7 +44,7 @@ def transect_get_data(data3d, profile):
     transect_data = np.ma.masked_where(profile==-1000, transect_data)
     return transect_data
 
-def transect_uv(udata3d, vdata3d, wdata3d,
+def transect_uv(udata3d, vdata3d, 
                 mesh, lon_start, lat_start, lon_end, lat_end, npoints=30, abg=[50, 15, -90], myangle = 0):
     '''
     Example:
@@ -62,12 +62,9 @@ def transect_uv(udata3d, vdata3d, wdata3d,
     
     u = udata3d[profile.flatten()]
     v = vdata3d[profile.flatten()]
-    w = wdata3d[profile.flatten()]
 
     u = u.reshape(profile.shape)
     v = v.reshape(profile.shape)
-    w = w.reshape(profile.shape)
-    w = np.ma.masked_where(profile==-1000, w)
     
     rot_u = []
     rot_v = []
