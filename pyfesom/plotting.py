@@ -60,7 +60,8 @@ def plot_transect(data3d, mesh, lon_start,
                   dist = None,
                   profile = None, 
                   ncols = 2,
-                  figsize = None):
+                  figsize = None, 
+                  transect_data = []):
 
         
     depth_index=(abs(mesh.zlevs-maxdepth)).argmin()
@@ -71,14 +72,16 @@ def plot_transect(data3d, mesh, lon_start,
         else:
             oneplot = False
         if ((type(dist) is np.ndarray) and (type(profile) is np.ndarray)):
-            transect_data = transect_get_data(data3d, profile)
+            if not (type(transect_data) is np.ma.core.MaskedArray):
+                transect_data = transect_get_data(data3d, profile)
         else:
             lonlat = transect_get_lonlat(lon_start, lat_start, lon_end, lat_end, npoints=npoints)
             nodes  = transect_get_nodes(lonlat, mesh)
             dist   = transect_get_distance(lonlat)
             profile = transect_get_profile(nodes, mesh)
-            transect_data = transect_get_data(data3d, profile)
-            
+                
+            if not (type(transect_data) is np.ma.core.MaskedArray):
+                transect_data = transect_get_data(data3d, profile)
         image = ax.contourf( dist, mesh.zlevs[:depth_index], transect_data[:,:depth_index].T,
                             levels = levels, cmap = cmap, extend='both')
         ax.invert_yaxis()
@@ -127,7 +130,7 @@ def plot_transect(data3d, mesh, lon_start,
                 cb = fig.colorbar(image, orientation='horizontal', ax=ax[ind], pad=0.11)
                 cb.set_label(label)
             for delind in range(ind+1, len(ax)):
-                print(delind)
+                
                 fig.delaxes(ax[delind])
 
             fig.tight_layout()
