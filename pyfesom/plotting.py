@@ -10,8 +10,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
+try:
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
+except:
+    print('cartopy is not avalible, plotting will not work')
 from cmocean import cm as cmo
 import palettable
 import matplotlib as mpl
