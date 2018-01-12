@@ -16,7 +16,6 @@ try:
 except:
     print('cartopy is not avalible, plotting will not work')
 from cmocean import cm as cmo
-import palettable
 import matplotlib as mpl
 from .transect import *
 import math
