@@ -11,7 +11,7 @@
 # TODO
 # Add seasonal climatology
 ################################################################################
-from .load_mesh_data import fesom2depth
+
 import numpy as np
 import scipy as sc
 from numpy import nanmean
@@ -22,7 +22,7 @@ import seawater as sw
 class climatology(object):
     '''
     Class that contains information from ocean 1 degree annual climatology.
-    Presently options are WOA2005 and PHC3.0
+    Presently options are WOA2005 PHC3.0 and GDEM.
 
     Parameters
     ----------
