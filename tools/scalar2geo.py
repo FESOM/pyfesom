@@ -163,6 +163,15 @@ def scalar2geo(ifile, opath, variable,
     ofile = os.path.join(opath, '{}_{}.nc'.format(os.path.basename(ifile)[:-3], ext))
 
     fl = Dataset(ifile)
+    if fl.variables[variable].shape[1] == mesh.n2d:
+        dim3d = False
+        dind = [dind[0]]
+        realdepth = [realdepth[0]]
+    elif fl.variables[variable].shape[1] == mesh.n3d:
+        dim3d = True
+    else:
+        raise ValueError('Variable size {} is not equal to number of 2d ({}) or 3d ({}) nodes'.format(fl.variables[variable].shape[1], mesh.n2d, mesh.n3d))
+
     fw = Dataset(ofile, mode='w',data_model='NETCDF4_CLASSIC', )
 
     fw.createDimension('latitude', lonreg2.shape[0])
@@ -189,14 +198,6 @@ def scalar2geo(ifile, opath, variable,
         time[:] = fl.variables['time'][:]
     else:
         time[:] = fl.variables['time'][timestep]
-    print(time.shape)
-
-    if fl.variables[variable].shape[1] == mesh.n2d:
-        dim3d = False
-    elif fl.variables[variable].shape[1] == mesh.n3d:
-        dim3d = True
-    else:
-        raise ValueError('Variable size {} is not equal to number of 2d ({}) or 3d ({}) nodes'.format(fl.variables[variable].shape[1], mesh.n2d, mesh.n3d))
 
     # ii = LinearNDInterpolator(qh, mesh.topo)
     if timestep == -1:
@@ -217,6 +218,7 @@ def scalar2geo(ifile, opath, variable,
             #for i in range(len(mesh.zlevs)):
             for n, i in enumerate(dind):
                 #level_data=np.zeros(shape=(mesh.n2d))
+                
                 level_data[ind_noempty_all[i]]=all_layers[ind_depth_all[i][ind_noempty_all[i]]]
                 level_data[ind_empty_all[i]] = np.nan
                 if interp == 'nn':
