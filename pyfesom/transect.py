@@ -38,10 +38,18 @@ def transect_get_profile(nodes, mesh):
     profile = (mesh.n32-1)[nodes,:]
     return profile
 
-def transect_get_data(data3d, profile):
+def transect_get_mask(nodes, mesh, lonlat, profile, max_distance):
+    (az12, az21, point_dist) = g.inv(lonlat[:,0], lonlat[:,1], mesh.x2[nodes], mesh.y2[nodes])
+    mask = ~(point_dist < max_distance)
+    mask2d = np.repeat(mask, profile.shape[1]).reshape(profile.shape)
+    return mask2d
+
+def transect_get_data(data3d, profile, mask2d=None):
     transect_data = data3d[profile.flatten()]
     transect_data = transect_data.reshape(profile.shape)
     transect_data = np.ma.masked_where(profile==-1000, transect_data)
+    if (type(mask2d) is np.ndarray):
+        transect_data = np.ma.masked_where(mask2d, transect_data)
     return transect_data
 
 def transect_uv(udata3d, vdata3d, 

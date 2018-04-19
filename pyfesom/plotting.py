@@ -63,7 +63,8 @@ def plot_transect(data3d, mesh, lon_start,
                   profile = None, 
                   ncols = 2,
                   figsize = None, 
-                  transect_data = []):
+                  transect_data = [],
+                  max_distance = 1e6 ):
 
         
     depth_index=(abs(mesh.zlevs-maxdepth)).argmin()
@@ -75,15 +76,18 @@ def plot_transect(data3d, mesh, lon_start,
             oneplot = False
         if ((type(dist) is np.ndarray) and (type(profile) is np.ndarray)):
             if not (type(transect_data) is np.ma.core.MaskedArray):
-                transect_data = transect_get_data(data3d, profile)
+                mask2d = transect_get_mask(nodes, mesh, lonlat, profile, max_distance)
+                transect_data = transect_get_data(data3d, profile, mask2d)
         else:
             lonlat = transect_get_lonlat(lon_start, lat_start, lon_end, lat_end, npoints=npoints)
             nodes  = transect_get_nodes(lonlat, mesh)
             dist   = transect_get_distance(lonlat)
             profile = transect_get_profile(nodes, mesh)
-                
             if not (type(transect_data) is np.ma.core.MaskedArray):
-                transect_data = transect_get_data(data3d, profile)
+                mask2d = transect_get_mask(nodes, mesh, lonlat, profile, max_distance)
+                transect_data = transect_get_data(data3d, profile, mask2d)
+
+            
         image = ax.contourf( dist, mesh.zlevs[:depth_index], transect_data[:,:depth_index].T,
                             levels = levels, cmap = cmap, extend='both')
         ax.invert_yaxis()
@@ -117,7 +121,8 @@ def plot_transect(data3d, mesh, lon_start,
                     nodes  = transect_get_nodes(lonlat, mesh)
                     dist   = transect_get_distance(lonlat)
                     profile = transect_get_profile(nodes, mesh)
-                    transect_data = transect_get_data(data, profile)
+                    mask2d = transect_get_mask(nodes, mesh, lonlat, profile, max_distance)
+                    transect_data = transect_get_data(data3d, profile, max_distance)
 
                 image = ax[ind].contourf( dist, mesh.zlevs[:depth_index], transect_data[:,:depth_index].T,
                                     levels = levels, cmap = cmap, extend='both')
