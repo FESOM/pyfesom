@@ -56,14 +56,30 @@ def transect_uv(udata3d, vdata3d,
                 mesh, lon_start, lat_start, lon_end, lat_end, npoints=30, abg=[50, 15, -90], myangle = 0):
     '''
     Example:
-    rot_u, rot_v, dist, profile = pf.transect_uv(fl.variables['u'][0,:], fl.variables['v'][0,:], fl.variables['w'][0,:],
-           mesh, lon_start, lat_start, lon_end, lat_end, myangle=0)
+        rot_u, rot_v, dist, profile = pf.transect_uv(f_bold02u.variables['u'][0,:],
+                                             f_bold02v.variables['v'][0,:],
+                                             mesh_bold,
+                                             lon_start,
+                                             lat_start,
+                                             lon_end,
+                                             lat_end,
+                                             npoints=50,
+                                             myangle=0)
 
-    pf.plot_transect(fl.variables['u'][0,:], mesh, lon_start, lat_start , lon_end, lat_end,
-                 transect_data=rot_u.T, dist=dist, profile=profile, 
-                 levels= np.round(np.linspace(-0.05, 0.05, 42),4), cmap=cmo.balance, maxdepth=600)
+        pf.plot_transect(f_bold02v.variables['v'][0,:], 
+                 mesh_bold, 
+                 lon_start, 
+                 lat_start,
+                 lon_end,
+                 lat_end,
+                 npoints=50, 
+                 transect_data=np.ma.masked_equal(rot_v, 0).T, 
+                 dist=dist, 
+                 profile=profile, 
+                 levels= np.round(np.linspace(-0.03, 0.03, 42),4), 
+                 cmap=cmo.balance, maxdepth=6000)
     '''
-    lonlat = transect_get_lonlat(lon_start, lat_start, lon_end, lat_end, npoints=40)
+    lonlat = transect_get_lonlat(lon_start, lat_start, lon_end, lat_end, npoints=npoints)
     nodes  = transect_get_nodes(lonlat, mesh)
     dist   = transect_get_distance(lonlat)
     profile = transect_get_profile(nodes, mesh)
