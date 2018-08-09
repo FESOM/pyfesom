@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 # This file is part of pyfesom
 #
 ################################################################################
@@ -125,8 +126,8 @@ def calculate_initial_compass_bearing(pointA, pointB):
     """
     Calculates the bearing between two points.
     The formulae used is the following:
-        θ = atan2(sin(Δlong).cos(lat2),
-                  cos(lat1).sin(lat2) − sin(lat1).cos(lat2).cos(Δlong))
+        θ = atan2(sin(long).cos(lat2),
+                  cos(lat1).sin(lat2) sin(lat1).cos(lat2).cos(long))
     :Parameters:
       - `pointA: The tuple representing the latitude/longitude for the
         first point. Latitude and longitude must be in decimal degrees
