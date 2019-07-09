@@ -1,3 +1,9 @@
 joblib
 cmocean
 seawater
+pandas
+netcdf4
+matplotlib
+scipy
+pyproj
+cartopy
