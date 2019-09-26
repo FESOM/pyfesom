@@ -62,7 +62,7 @@ def fesom2gdal(mesh,outputname,gdaldriver='GPKG'):
     surftype=ogr.wkbPolygon
 
 
-    tinlayer = data_source.CreateLayer("tin", srs, ogr.wkbTriangle)
+    tinlayer = data_source.CreateLayer("tin", srs, surftype)
 
     # Add the fields we're interested in (nodeid's of 
     field_nodeid = ogr.FieldDefn("nodeid", ogr.OFTIntegerList)
