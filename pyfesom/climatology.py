@@ -30,10 +30,11 @@ class climatology(object):
     path : str
         Path to the directory with climatology files
     climname : str
-        Name of the climatology ('woa05' or 'phc')
+        Name of the climatology ('woa05', 'phc', 'gdem', 'en4')
     record: int
         Number of record in climatology file. e.g.
-	0 to 3 for seasonal, 0 to 11 for monthly
+	0 to 3 for seasonal, 0 to 11 for monthly. Only supported
+	for `en4` at the moment
 
     Returns
     -------
@@ -57,7 +58,7 @@ class climatology(object):
         zonal mean of salinity
 
     '''
-    def __init__(self, path, climname='woa05', record):
+    def __init__(self, path, climname='woa05', record=0):
         if climname=='woa05':
             ncfile = Dataset(os.path.join(path, 'woa2005TS.nc'))
             self.T = np.copy(ncfile.variables['t00an1'][0,:,:,:])
