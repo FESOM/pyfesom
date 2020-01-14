@@ -292,8 +292,8 @@ class fesom_mesh(object):
 
         with open(self.aux3dfile) as f:
             self.nlev=int(next(f))
-            self.n32=np.array([next(f) for x in \
-                            range(self.n2d*self.nlev)]).astype(int).reshape(self.n2d, self.nlev)   
+            self.n32=np.fromiter(f,dtype=np.int32,count=self.n2d*self.nlev).reshape(self.n2d,self.nlev)
+        
         self.topo=np.zeros(shape=(self.n2d))
         for prof in self.n32:           
             ind_nan = prof[prof>0]
