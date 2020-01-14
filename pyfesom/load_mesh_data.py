@@ -25,7 +25,10 @@ except:
     import pickle
 import pickle
 import sys
-import joblib
+try:
+    import joblib
+except:
+    print('No joblib')
 
 if (sys.version_info > (3, 0)):
 # Python 3 code in this block

@@ -15,7 +15,10 @@ try:
     import cartopy.feature as cfeature
 except:
     print('cartopy is not avalible, plotting will not work')
-from cmocean import cm as cmo
+try:
+    from cmocean import cm as cmo
+except:
+    print('no cmocean')
 import matplotlib as mpl
 from .transect import *
 import math
