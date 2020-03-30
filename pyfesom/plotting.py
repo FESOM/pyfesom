@@ -76,6 +76,9 @@ def plot_transect(data3d, mesh, lon_start,
         if ((type(dist) is np.ndarray) and (type(profile) is np.ndarray)):
             if not (type(transect_data) is np.ma.core.MaskedArray):
                 transect_data = transect_get_data(data3d, profile)
+        elif ((type(dist) is np.ndarray) and (type(transect_data) is np.ndarray)):
+            lonlat = transect_get_lonlat(lon_start, lat_start, lon_end, lat_end, npoints=npoints)
+            
         else:
             lonlat = transect_get_lonlat(lon_start, lat_start, lon_end, lat_end, npoints=npoints)
             nodes  = transect_get_nodes(lonlat, mesh)
