@@ -2,7 +2,7 @@
 
 Collection of tools for basic handling of FESOM ocean model output.
 
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/koldunovn/pyfesom/blob/master/LICENSE) [![Documentation Status](https://readthedocs.org/projects/pyfesom/badge/?version=latest)](http://pyfesom.readthedocs.io/en/latest/?badge=latest)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/koldunovn/pyfesom/blob/master/LICENSE) [![Documentation Status](https://readthedocs.org/projects/pyfesom/badge/?version=latest)](http://pyfesom.readthedocs.io/en/latest/?badge=latest) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/FESOM/pyfesom2/HEAD)
 
 ## Documentation (tools and library)
 
