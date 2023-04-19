@@ -1,3 +1,6 @@
+# THIS PROGECT IS NOT SUPPORTED ANYMORE AND ARCHIVED
+Please use https://github.com/FESOM/pyfesom2 instead
+
 # pyfesom
 
 Collection of tools for basic handling of FESOM ocean model output.
